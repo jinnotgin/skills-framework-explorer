@@ -727,13 +727,24 @@
       border-bottom: 1px solid var(--border-light);
       background: var(--bg-secondary);
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .content-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      min-width: 0;
     }
 
     .content-title {
       font-size: 1.1rem;
       font-weight: 700;
       color: var(--text-primary);
-      margin-bottom: 0.125rem;
     }
 
     .content-subtitle {
@@ -744,7 +755,8 @@
     .content-stats {
       display: flex;
       gap: 0.75rem;
-      margin-top: 0.875rem;
+      margin-top: 0;
+      flex-wrap: wrap;
     }
 
     .stat-card {
@@ -774,11 +786,6 @@
     .stat-icon.skills {
       background: var(--success-soft);
       color: var(--success);
-    }
-
-    .stat-icon.tsc {
-      background: var(--warning-soft);
-      color: var(--warning);
     }
 
     .stat-value {
@@ -1032,6 +1039,80 @@
       display: flex;
       align-items: center;
       gap: 0.375rem;
+    }
+
+    .cwf-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .cwf-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .cwf-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .cwf-toggle {
+      border: none;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-full);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.7rem;
+      color: var(--accent-primary);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .cwf-body {
+      display: none;
+      margin-top: 0.25rem;
+    }
+
+    .cwf-body.visible {
+      display: block;
+    }
+
+    .cwf-item {
+      margin-bottom: 0.65rem;
+    }
+
+    .cwf-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .cwf-item-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .cwf-task {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-left: 0.75rem;
+      margin-bottom: 0.2rem;
+      position: relative;
+    }
+
+    .cwf-task::before {
+      content: '•';
+      position: absolute;
+      left: -0.5rem;
+      color: var(--accent-primary);
     }
 
     .skills-grid {
@@ -2321,8 +2402,10 @@
       <!-- RESULTS CONTAINER -->
       <div class="results-container hidden" id="resultsContainer">
         <div class="content-header">
-          <div class="content-title">Skills Analysis</div>
-          <div class="content-subtitle" id="resultsSubtitle">Viewing skills for selected roles</div>
+          <div class="content-heading">
+            <div class="content-title">Skills Analysis</div>
+            <div class="content-subtitle" id="resultsSubtitle">Viewing skills for selected roles</div>
+          </div>
           <div class="content-stats">
             <div class="stat-card">
               <div class="stat-icon roles">👤</div>
@@ -2336,13 +2419,6 @@
               <div>
                 <div class="stat-value" id="statUniqueSkills">0</div>
                 <div class="stat-label">Unique Skills</div>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon tsc">📊</div>
-              <div>
-                <div class="stat-value" id="statTsc">0</div>
-                <div class="stat-label">TSC/CCS</div>
               </div>
             </div>
           </div>
@@ -2470,6 +2546,7 @@
         tscKAndA = PRELOADED_DATA.tscKAndA || [];
         tscToUnique = PRELOADED_DATA.tscToUnique || [];
         uniqueSkillsList = PRELOADED_DATA.uniqueSkillsList || [];
+        jobRoleCwfKt = PRELOADED_DATA.jobRoleCwfKt || [];
 
         // Mark workbooks as loaded (for UI status)
         frameworkWb = { loaded: true };
@@ -2523,12 +2600,14 @@
     let tscKAndA = [];
     let tscToUnique = [];
     let uniqueSkillsList = [];
+    let jobRoleCwfKt = [];
 
     let tscInfoByCode = new Map();
     let tscMappingByCodeProf = new Map();
     let tscMappingByCode = new Map();
     let uniqueSkillByTitle = new Map();
     let kAndAByCodeProf = new Map();
+    let roleCwfByKey = new Map();
 
     let selectedRoleKeys = new Set();
     let currentView = 'role';
@@ -2600,7 +2679,6 @@
 
     const statRoles = document.getElementById('statRoles');
     const statUniqueSkills = document.getElementById('statUniqueSkills');
-    const statTsc = document.getElementById('statTsc');
 
     // Mobile elements
     const sidebar = document.getElementById('sidebar');
@@ -2841,6 +2919,7 @@
         jobRoleDescriptions = sheetToJsonIfExists(frameworkWb, 'Job Role_Description');
         jobRoleTcsCcs = sheetToJsonIfExists(frameworkWb, 'Job Role_TCS_CCS');
         tscKAndA = sheetToJsonIfExists(frameworkWb, 'TSC_CCS_K&A');
+        jobRoleCwfKt = sheetToJsonIfExists(frameworkWb, 'Job Role_CWF_KT');
       }
       if (tscMapWb) {
         tscToUnique = sheetToJsonIfExists(tscMapWb, 'TSC to Unique Skill Mapping');
@@ -2853,6 +2932,7 @@
     function buildMaps() {
       tscInfoByCode.clear();
       kAndAByCodeProf.clear();
+      roleCwfByKey.clear();
 
       for (const row of tscKAndA) {
         const type = safeStr(row['TSC_CCS Type']).toLowerCase();
@@ -2899,6 +2979,32 @@
           } else {
             entry.knowledgeItems.push(item);
           }
+        } else {
+          entry.knowledgeItems.push(item);
+        }
+      }
+
+      // Build Critical Work Function & Key Tasks map per role
+      for (const row of jobRoleCwfKt) {
+        const roleKey = makeRoleKey(row);
+        if (!roleKey) continue;
+
+        const cwf = safeStr(row['Critical Work Function'] || row['Job Role_Critical Work Function'] || row['CWF']);
+        const keyTask = safeStr(row['Key Tasks'] || row['Key Task'] || row['Tasks']);
+        
+        if (!cwf && !keyTask) continue;
+
+        if (!roleCwfByKey.has(roleKey)) {
+          roleCwfByKey.set(roleKey, new Map());
+        }
+
+        const cwfMap = roleCwfByKey.get(roleKey);
+        if (!cwfMap.has(cwf)) {
+          cwfMap.set(cwf, new Set());
+        }
+
+        if (keyTask) {
+          cwfMap.get(cwf).add(keyTask);
         }
       }
 
@@ -3155,9 +3261,21 @@
         const { sector, track, role } = parseRoleKey(roleKey);
         const roleDesc = roles.find(r => makeRoleKey(r) === roleKey);
         const roleTscs = tscRows.filter(r => makeRoleKey(r) === roleKey);
+        const cwfMap = roleCwfByKey.get(roleKey);
 
         const uniqueSkillsMap = new Map();
         const tscList = [];
+        const cwfList = [];
+
+        if (cwfMap && cwfMap.size) {
+          for (const [cwfTitle, tasksSet] of cwfMap.entries()) {
+            cwfList.push({
+              title: cwfTitle || 'Critical Work Function',
+              tasks: Array.from(tasksSet || [])
+            });
+          }
+          cwfList.sort((a, b) => a.title.localeCompare(b.title));
+        }
 
         for (const tsc of roleTscs) {
           const code = safeStr(tsc['TSC_CCS Code']);
@@ -3274,6 +3392,7 @@
           track,
           description: roleDesc ? safeStr(roleDesc['Job Role Description']) : '',
           performance: roleDesc ? safeStr(roleDesc['Performance Expectation']) : '',
+          cwf: cwfList,
           uniqueSkills: Array.from(uniqueSkillsMap.values()),
           tscs: tscList
         });
@@ -3289,7 +3408,6 @@
 
       statRoles.textContent = analysisResults.totalRoles;
       statUniqueSkills.textContent = analysisResults.totalUniqueSkills;
-      statTsc.textContent = analysisResults.totalTscs;
 
       document.querySelector('.content-title').setAttribute('data-role-count', analysisResults.totalRoles);
 
@@ -3362,6 +3480,25 @@
           return bMax - aMax;
         });
 
+        const cwfHtml = (data.cwf && data.cwf.length) ? `
+          <div class="cwf-card">
+            <div class="cwf-header">
+              <div class="cwf-title">🗂️ Critical Work Functions</div>
+              <button class="cwf-toggle" type="button">Show</button>
+            </div>
+            <div class="cwf-body">
+              ${data.cwf.map(cwf => `
+                <div class="cwf-item">
+                  <div class="cwf-item-title">${escapeHtml(cwf.title)}</div>
+                  ${(cwf.tasks || []).map(task => `
+                    <div class="cwf-task">${escapeHtml(task)}</div>
+                  `).join('')}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : '';
+
         // Only show unique skills section, no TSC list in middle panel
         card.innerHTML = `
           <div class="role-card-header">
@@ -3374,23 +3511,21 @@
             </div>
             <div class="role-card-badges">
               <span class="badge badge-primary">${data.uniqueSkills.length} skills</span>
-              <span class="badge badge-success">${data.tscs.length} TSCs</span>
             </div>
             <span class="role-card-toggle">▼</span>
           </div>
           <div class="role-card-body">
             <div class="skills-section">
+              ${cwfHtml}
               <div class="skills-section-title">
                 <span>💡</span>
-                <span>Unique Skills</span>
+                <span>Skills</span>
               </div>
               <div class="skills-grid">
                 ${sortedSkills.map(skill => `
                   <div class="skill-row" data-skill-title="${escapeHtml(skill.title)}" data-role-key="${escapeHtml(roleKey)}">
-                    <div class="skill-row-icon">${skill.isEmerging ? '🌟' : '📌'}</div>
                     <div class="skill-row-content">
                       <div class="skill-row-title">${escapeHtml(skill.title)}</div>
-                      <div class="skill-row-subtitle">${skill.tscs.size} TSC${skill.tscs.size > 1 ? 's' : ''} linked</div>
                     </div>
                     <div class="skill-row-badges">
                       ${Array.from(skill.proficiencies.keys()).sort().map(p => `
@@ -3413,6 +3548,21 @@
         header.addEventListener('click', () => {
           card.classList.toggle('expanded');
         });
+
+        const cwfToggle = card.querySelector('.cwf-toggle');
+        const cwfBody = card.querySelector('.cwf-body');
+        if (cwfToggle && cwfBody) {
+          const toggleVisible = () => {
+            const isVisible = cwfBody.classList.toggle('visible');
+            cwfToggle.textContent = isVisible ? 'Hide' : 'Show';
+          };
+          cwfToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleVisible();
+          });
+          // Default to collapsed
+          cwfBody.classList.remove('visible');
+        }
 
         card.querySelectorAll('.skill-row').forEach(row => {
           row.addEventListener('click', (e) => {
@@ -3658,6 +3808,24 @@
     // =========================================================================
     // DETAIL PANEL - WITH K&A ITEMS SPLIT BY PROFICIENCY
     // =========================================================================
+    function renderCwfSection(cwfList, heading = 'Critical Work Functions') {
+      if (!cwfList || !cwfList.length) return '';
+
+      return `
+        <div class="detail-section">
+          <div class="detail-section-title">${heading}</div>
+          ${cwfList.map(cwf => `
+            <div class="cwf-item" style="margin-bottom: 0.75rem;">
+              <div class="cwf-item-title">${escapeHtml(cwf.title)}</div>
+              ${(cwf.tasks || []).map(task => `
+                <div class="cwf-task">${escapeHtml(task)}</div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
     function openDetailPanel() {
       detailPanel.classList.add('open');
       detailPanel.scrollTop = 0;
@@ -3666,15 +3834,16 @@
 
     function showSkillDetail(skillTitle, roleKey) {
       const roleData = analysisResults.roles.get(roleKey);
-      const skillData = roleData.uniqueSkills.find(s => s.title === skillTitle);
+      if (!roleData) return;
 
+      const skillData = roleData.uniqueSkills.find(s => s.title === skillTitle);
       if (!skillData) return;
 
       // Get proficiency levels sorted
       const profLevels = Array.from(skillData.proficiencies.keys()).sort((a, b) => parseInt(a) - parseInt(b));
 
       detailTitle.textContent = skillTitle;
-      
+
       let html = `
         <div class="detail-section">
           <div class="detail-section-title">Description</div>
@@ -3689,15 +3858,8 @@
             ${skillData.isCasl ? '<span class="badge badge-success">CASL Skill</span>' : ''}
           </div>
         </div>
-
         <div class="detail-section">
           <div class="detail-section-title">Proficiency Levels</div>
-          <div class="detail-tags" style="margin-bottom: 0.75rem;">
-            ${profLevels.map(p => `
-              <span class="proficiency-badge">${escapeHtml(p)}</span>
-            `).join('')}
-          </div>
-        </div>
       `;
 
       // Render each proficiency level separately
@@ -3758,6 +3920,8 @@
         `;
       }
 
+      html += `</div>`;
+
       detailBody.innerHTML = html;
       openDetailPanel();
     }
@@ -3806,15 +3970,8 @@
             </div>
           </div>
         </div>
-
         <div class="detail-section">
           <div class="detail-section-title">Proficiency Levels</div>
-          <div class="detail-tags" style="margin-bottom: 0.75rem;">
-            ${profLevels.map(p => `
-              <span class="proficiency-badge">${p}</span>
-            `).join('')}
-          </div>
-        </div>
       `;
 
       // Render each proficiency level
@@ -3915,6 +4072,8 @@
         `;
       }
 
+      html += `</div>`;
+
       detailBody.innerHTML = html;
       openDetailPanel();
     }
@@ -3956,15 +4115,8 @@
             </div>
           `).join('')}
         </div>
-
         <div class="detail-section">
           <div class="detail-section-title">Proficiency Levels</div>
-          <div class="detail-tags" style="margin-bottom: 0.75rem;">
-            ${profLevels.map(p => `
-              <span class="proficiency-badge">${p}</span>
-            `).join('')}
-          </div>
-        </div>
       `;
 
       // Render each proficiency level
@@ -4029,6 +4181,8 @@
           </div>
         `;
       }
+
+      html += `</div>`;
 
       detailBody.innerHTML = html;
       openDetailPanel();
