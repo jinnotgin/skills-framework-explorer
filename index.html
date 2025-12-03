@@ -2465,12 +2465,21 @@
       selectionExpandBtn.style.display = selectedRoleKeys.size > 0 ? 'inline-block' : 'none';
 
       selectedChips.innerHTML = '';
+
+      // Count roles to decide when track disambiguation is needed
+      const roleCounts = new Map();
+      for (const key of selectedRoleKeys) {
+        const { role } = parseRoleKey(key);
+        roleCounts.set(role, (roleCounts.get(role) || 0) + 1);
+      }
+
       for (const key of selectedRoleKeys) {
         const { role, track } = parseRoleKey(key);
+        const showTrack = (roleCounts.get(role) || 0) > 1 && track;
         const chip = document.createElement('span');
         chip.className = 'selected-chip';
         chip.innerHTML = `
-          <span>${escapeHtml(role)} <span style="opacity: 0.7; font-size: 0.6rem;">(${escapeHtml(track)})</span></span>
+          <span>${escapeHtml(role)}${showTrack ? ` <span style="opacity: 0.7; font-size: 0.6rem;">(${escapeHtml(track)})</span>` : ''}</span>
           <span class="remove" data-key="${escapeHtml(key)}">×</span>
         `;
         chip.querySelector('.remove').addEventListener('click', (e) => {
