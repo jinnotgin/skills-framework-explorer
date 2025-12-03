@@ -2004,6 +2004,7 @@
     let chipsExpanded = false;
     let isPreloadingData = false;
     let isUsingPreloadedData = false;
+    let hasAutoFocusedRoleSearch = false;
 
     // Track currently selected skill element
     let currentlySelectedSkillElement = null;
@@ -2117,6 +2118,18 @@
       currentlySelectedSkillKey = null;
     }
 
+    function focusRoleSearchInput() {
+      if (hasAutoFocusedRoleSearch) return;
+      if (!roleSearchInput || !jobRoleDescriptions.length) return;
+
+      hasAutoFocusedRoleSearch = true;
+      setTimeout(() => {
+        if (document.activeElement === roleSearchInput) return;
+        roleSearchInput.focus({ preventScroll: true });
+        roleSearchInput.select();
+      }, 0);
+    }
+
     function renderEmptyState() {
       if (!emptyStateText || !emptyStateSteps) return;
 
@@ -2157,6 +2170,9 @@
 
     function setPreloadingState(isLoading) {
       isPreloadingData = isLoading;
+      if (isLoading) {
+        hasAutoFocusedRoleSearch = false;
+      }
 
       if (emptyState) {
         emptyState.classList.toggle('is-loading', isLoading);
@@ -2207,6 +2223,7 @@
       } else {
         globalStatusDot.className = 'status-dot loaded';
         globalStatusText.textContent = 'All files loaded';
+        focusRoleSearchInput();
         // Collapse file section when all loaded
         fileSectionContainer.classList.remove('expanded');
       }
@@ -2214,6 +2231,7 @@
 
     async function handleFiles(files) {
       isUsingPreloadedData = false;
+      hasAutoFocusedRoleSearch = false;
       renderEmptyState();
 
       for (const file of files) {
