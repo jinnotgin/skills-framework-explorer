@@ -58,6 +58,13 @@
       --header-height: 56px;
       --sidebar-width: 320px;
       --detail-width: 540px;
+      --bottom-nav-height: 60px;
+      
+      /* Responsive breakpoints */
+      --breakpoint-sm: 640px;
+      --breakpoint-md: 768px;
+      --breakpoint-lg: 1024px;
+      --breakpoint-xl: 1280px;
     }
 
     * {
@@ -186,6 +193,41 @@
       background: var(--bg-secondary);
       color: var(--accent-primary);
       box-shadow: var(--shadow-sm);
+    }
+
+    /* Mobile menu button */
+    .mobile-menu-btn {
+      display: none;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-tertiary);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .mobile-menu-btn:hover {
+      background: var(--bg-hover);
+    }
+
+    /* ===== SIDEBAR BACKDROP ===== */
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 199;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--transition-normal), visibility var(--transition-normal);
+    }
+
+    .sidebar-backdrop.visible {
+      opacity: 1;
+      visibility: visible;
     }
 
     /* ===== MAIN LAYOUT ===== */
@@ -917,6 +959,7 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .role-card-meta {
@@ -1028,6 +1071,7 @@
       justify-content: center;
       margin-right: 0.625rem;
       font-size: 0.8rem;
+      flex-shrink: 0;
     }
 
     .skill-row-content {
@@ -1053,6 +1097,7 @@
       display: flex;
       gap: 0.25rem;
       margin-left: 0.5rem;
+      flex-shrink: 0;
     }
 
     .proficiency-badge {
@@ -1072,6 +1117,7 @@
       color: var(--text-muted);
       margin-left: 0.375rem;
       font-size: 0.8rem;
+      flex-shrink: 0;
     }
 
     /* ===== DETAIL PANEL ===== */
@@ -1454,6 +1500,7 @@
 
     .skill-result-info {
       flex: 1;
+      min-width: 0;
     }
 
     .skill-result-title {
@@ -1551,6 +1598,11 @@
       color: var(--text-muted);
     }
 
+    /* ===== BOTTOM NAVIGATION ===== */
+    .bottom-nav {
+      display: none;
+    }
+
     /* ===== UTILITIES ===== */
     .hidden {
       display: none !important;
@@ -1629,17 +1681,6 @@
       margin-top: 0.25rem;
     }
 
-    @media (max-width: 1024px) {
-      .detail-panel.open {
-        position: fixed;
-        right: 0;
-        top: var(--header-height);
-        height: calc(100vh - var(--header-height));
-        z-index: 50;
-        box-shadow: var(--shadow-xl);
-      }
-    }
-
     /* Fix alignment - ka item bullets */
     .ka-item-bullet {
       width: 5px;
@@ -1656,9 +1697,474 @@
     .ka-item-bullet.ability {
       background: var(--success);
     }
+
+    /* ============================================
+       MOBILE RESPONSIVE STYLES
+       ============================================ */
+
+    /* Tablet and below */
+    @media (max-width: 1024px) {
+      .detail-panel.open {
+        position: fixed;
+        right: 0;
+        top: var(--header-height);
+        height: calc(100vh - var(--header-height));
+        z-index: 50;
+        box-shadow: var(--shadow-xl);
+      }
+    }
+
+    /* Mobile styles */
+    @media (max-width: 768px) {
+      :root {
+        --header-height: 52px;
+      }
+
+      /* Header mobile adjustments */
+      .header {
+        padding: 0 0.75rem;
+      }
+
+      .logo-text {
+        display: none;
+      }
+
+      .header-status {
+        display: none;
+      }
+
+      .view-toggle {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: flex;
+      }
+
+      /* Sidebar as slide-out drawer */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 85vw;
+        max-width: 320px;
+        height: 100vh;
+        z-index: 200;
+        transform: translateX(-100%);
+        transition: transform var(--transition-normal);
+        box-shadow: var(--shadow-xl);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      /* Add top padding in sidebar for status bar on mobile */
+      .sidebar-file-section {
+        padding-top: env(safe-area-inset-top, 0);
+      }
+
+      /* App container mobile */
+      .app-container {
+        flex-direction: column;
+      }
+
+      .main-content {
+        width: 100%;
+        height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
+      }
+
+      /* Add padding to account for bottom nav overlay */
+      .detail-panel-body {
+        padding-bottom: calc(var(--bottom-nav-height) + 2rem + env(safe-area-inset-bottom));
+      }
+
+      /* Bottom navigation */
+      .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: var(--bottom-nav-height);
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-light);
+        z-index: 100;
+        padding: 0.5rem;
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+        gap: 0.25rem;
+      }
+
+      .bottom-nav-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 0.65rem;
+        cursor: pointer;
+        border-radius: var(--radius-md);
+        transition: var(--transition-fast);
+        padding: 0.25rem;
+      }
+
+      .bottom-nav-btn:hover,
+      .bottom-nav-btn:active {
+        background: var(--bg-tertiary);
+      }
+
+      .bottom-nav-btn.active {
+        color: var(--accent-primary);
+        background: var(--accent-soft);
+      }
+
+      .bottom-nav-btn .icon {
+        font-size: 1.25rem;
+      }
+
+      /* Detail panel as full-screen modal */
+      .detail-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100vh;
+        z-index: 250;
+        transform: translateX(100%);
+        transition: transform var(--transition-normal);
+        border-left: none;
+      }
+
+      .detail-panel.open {
+        transform: translateX(0);
+        width: 100%;
+      }
+
+      .detail-panel-inner {
+        width: 100%;
+      }
+
+      .detail-panel-header {
+        padding: 1rem;
+        padding-top: max(1rem, env(safe-area-inset-top));
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+      }
+
+      .detail-panel-close {
+        width: 36px;
+        height: 36px;
+      }
+
+      /* Larger touch targets */
+      .role-item {
+        padding: 0.75rem;
+        min-height: 48px;
+      }
+
+      .skill-row {
+        padding: 0.875rem;
+        min-height: 56px;
+      }
+
+      .sector-header {
+        padding: 0.75rem;
+        min-height: 48px;
+      }
+
+      .role-checkbox {
+        width: 20px;
+        height: 20px;
+      }
+
+      .analyze-btn {
+        padding: 0.875rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      /* Prevent iOS zoom on inputs */
+      .search-input {
+        padding: 0.75rem 0.875rem 0.75rem 2.5rem;
+        font-size: 16px;
+      }
+
+      .filter-select {
+        padding: 0.625rem;
+        font-size: 16px;
+      }
+
+      .content-stats {
+        display: none;
+      }
+      
+      .stat-card {
+        flex: 1 1 calc(50% - 0.25rem);
+        min-width: 100px;
+      }
+
+      /* Content adjustments */
+      .content-header {
+        padding: 0.875rem 1rem;
+      }
+
+      .content-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+      }
+
+      /* Add role count badge inline with title */
+      .content-title::after {
+        content: attr(data-role-count) " roles";
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        background: var(--accent-soft);
+        color: var(--accent-primary);
+        border-radius: var(--radius-full);
+      }
+
+      .content-subtitle {
+        display: none;
+      }
+
+      .content-body {
+        padding: 0.875rem;
+        padding-bottom: calc(var(--bottom-nav-height) + 1.5rem);
+      }
+
+      /* Role card mobile */
+      .role-card-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.75rem;
+      }
+
+      .role-card-badges {
+        margin-left: 0;
+        order: 3;
+        width: 100%;
+        margin-top: 0.25rem;
+      }
+
+      .role-card-toggle {
+        margin-left: auto;
+      }
+
+      /* Skills section mobile */
+      .skills-section {
+        padding: 0.75rem;
+      }
+
+      .skill-row-title {
+        font-size: 0.85rem;
+        white-space: normal;
+      }
+
+      /* Compare view mobile */
+      .compare-header {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .compare-role-card {
+        padding: 0.75rem;
+      }
+
+      .compare-role-name {
+        font-size: 0.85rem;
+      }
+
+      .compare-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .compare-divider {
+        display: none;
+      }
+
+      .compare-column-header {
+        text-align: left;
+        font-size: 0.8rem;
+        padding: 0.5rem 0;
+      }
+
+      .compare-skill-item {
+        padding: 0.75rem;
+      }
+
+      /* Selection tray mobile - shows above bottom nav */
+      .selection-tray {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+        background: var(--bg-tertiary);
+        /* Remove fixed positioning and transforms */
+        transform: none !important;
+        max-height: none;
+      }
+
+      .selection-tray.has-selection {
+        transform: translateY(0);
+      }
+
+      /* Always show minimal tray even when empty */
+      .selection-tray .selection-tray-main {
+        padding: 0.75rem 1rem;
+      }
+
+      .selected-roles-expandable.expanded {
+        max-height: 25vh;
+      }
+
+      /* Empty state mobile */
+      .empty-state {
+        padding: 1.5rem;
+      }
+
+      .empty-state-icon {
+        font-size: 2.5rem;
+      }
+
+      .empty-state-title {
+        font-size: 1rem;
+      }
+
+      .empty-state-text {
+        font-size: 0.8rem;
+      }
+
+      .empty-state-steps {
+        gap: 1rem;
+      }
+
+      .step-number {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+      }
+
+      .step-text {
+        font-size: 0.7rem;
+      }
+
+      /* Drop overlay mobile */
+      .drop-overlay-content {
+        padding: 1.5rem 2rem;
+        margin: 1rem;
+      }
+
+      .drop-overlay-icon {
+        font-size: 2.5rem;
+      }
+
+      .drop-overlay-text {
+        font-size: 1rem;
+      }
+
+      /* Skill info button mobile */
+      .skill-info-btn {
+        width: 36px;
+        height: 36px;
+      }
+
+      /* Proficiency group mobile */
+      .proficiency-group {
+        padding: 0.75rem;
+      }
+
+      .proficiency-group-header {
+        flex-wrap: wrap;
+      }
+
+      /* Detail sections mobile */
+      .detail-section {
+        margin-bottom: 1rem;
+      }
+
+      .detail-ka-item {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      /* File upload zone mobile */
+      .file-upload-zone {
+        padding: 1rem;
+      }
+
+      .file-upload-text {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Small mobile (iPhone SE, etc.) */
+    @media (max-width: 375px) {
+      .sidebar {
+        width: 100vw;
+        max-width: none;
+      }
+
+      .stat-card {
+        flex: 1 1 100%;
+      }
+
+      .bottom-nav-btn {
+        font-size: 0.6rem;
+      }
+
+      .bottom-nav-btn .icon {
+        font-size: 1.1rem;
+      }
+
+      .compare-role-name {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Landscape mobile */
+    @media (max-width: 768px) and (orientation: landscape) {
+      .sidebar {
+        width: 50vw;
+        max-width: 320px;
+      }
+
+      .detail-panel.open {
+        width: 60vw;
+      }
+
+      .detail-panel-inner {
+        width: 60vw;
+      }
+
+      .bottom-nav {
+        height: 50px;
+      }
+
+      .main-content {
+        height: calc(100vh - var(--header-height) - 50px);
+      }
+
+      .selection-tray {
+        bottom: 50px;
+      }
+    }
   </style>
 </head>
 <body>
+  <!-- Sidebar backdrop overlay -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
   <!-- Full-page drop overlay -->
   <div class="drop-overlay" id="dropOverlay">
     <div class="drop-overlay-content">
@@ -1671,6 +2177,7 @@
   <!-- ===== HEADER ===== -->
   <header class="header">
     <div class="header-left">
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
       <div class="logo">
         <div class="logo-icon">SF</div>
         <span class="logo-text">Skills Framework Explorer</span>
@@ -1692,7 +2199,7 @@
   <!-- ===== MAIN LAYOUT ===== -->
   <div class="app-container">
     <!-- LEFT SIDEBAR -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <!-- Collapsible File Upload Section -->
       <div class="sidebar-file-section" id="fileSectionContainer">
         <div class="file-section-header" id="fileSectionHeader">
@@ -1873,6 +2380,27 @@
       </div>
     </aside>
   </div>
+
+  <!-- BOTTOM NAVIGATION (Mobile) -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bottom-nav-btn" data-view="roles" id="bottomNavRoles">
+      <span class="icon">📋</span>
+      <span>Roles</span>
+    </button>
+    <button class="bottom-nav-btn active" data-view="role" id="bottomNavAnalysis">
+      <span class="icon">👤</span>
+      <span>Analysis</span>
+    </button>
+    <button class="bottom-nav-btn" data-view="compare" id="bottomNavCompare">
+      <span class="icon">⚖️</span>
+      <span>Compare</span>
+    </button>
+    <button class="bottom-nav-btn" data-view="skill" id="bottomNavSkill">
+      <span class="icon">💡</span>
+      <span>Skills</span>
+    </button>
+  </nav>
+
   <script>
     // =========================================================================
     // PRELOADED DATA - Will be fetched from relative URL
@@ -2012,6 +2540,9 @@
 
     let dragCounter = 0; // Track drag enter/leave for nested elements
 
+    // Mobile state
+    let isMobile = window.innerWidth <= 768;
+
     // =========================================================================
     // DOM ELEMENTS
     // =========================================================================
@@ -2039,6 +2570,7 @@
     const selectionExpandBtn = document.getElementById('selectionExpandBtn');
     const clearSelectionBtn = document.getElementById('clearSelectionBtn');
     const analyzeBtn = document.getElementById('analyzeBtn');
+    const selectionTray = document.getElementById('selectionTray');
 
     const emptyState = document.getElementById('emptyState');
     const preloadBanner = document.getElementById('preloadBanner');
@@ -2065,6 +2597,12 @@
     const statRoles = document.getElementById('statRoles');
     const statUniqueSkills = document.getElementById('statUniqueSkills');
     const statTsc = document.getElementById('statTsc');
+
+    // Mobile elements
+    const sidebar = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const bottomNav = document.getElementById('bottomNav');
 
     // =========================================================================
     // UTILITIES
@@ -2121,6 +2659,8 @@
     function focusRoleSearchInput() {
       if (hasAutoFocusedRoleSearch) return;
       if (!roleSearchInput || !jobRoleDescriptions.length) return;
+      // Don't auto-focus on mobile (it causes keyboard to pop up)
+      if (isMobile) return;
 
       hasAutoFocusedRoleSearch = true;
       setTimeout(() => {
@@ -2189,6 +2729,34 @@
         preloadBannerText.textContent = isLoading ? 'Loading data...' : 'Data ready';
       }
       updateGlobalStatus();
+    }
+
+    // =========================================================================
+    // MOBILE FUNCTIONS
+    // =========================================================================
+    function openSidebar() {
+      sidebar.classList.add('open');
+      sidebarBackdrop.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarBackdrop.classList.remove('visible');
+      document.body.style.overflow = '';
+    }
+
+    function updateBottomNavActive(view) {
+      bottomNav.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.view === view) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    function checkMobile() {
+      isMobile = window.innerWidth <= 768;
     }
 
     // =========================================================================
@@ -2464,6 +3032,13 @@
       selectionExpandBtn.textContent = chipsExpanded ? 'Hide ▼' : 'View ▲';
       selectionExpandBtn.style.display = selectedRoleKeys.size > 0 ? 'inline-block' : 'none';
 
+      // Mobile: toggle has-selection class for tray visibility
+      if (selectedRoleKeys.size > 0) {
+        selectionTray.classList.add('has-selection');
+      } else {
+        selectionTray.classList.remove('has-selection');
+      }
+
       selectedChips.innerHTML = '';
 
       // Count roles to decide when track disambiguation is needed
@@ -2558,6 +3133,11 @@
     // =========================================================================
     function runAnalysis() {
       if (selectedRoleKeys.size === 0) return;
+
+      // Close sidebar on mobile after analysis
+      if (isMobile) {
+        closeSidebar();
+      }
 
       const keySet = selectedRoleKeys;
       const roles = jobRoleDescriptions.filter(r => keySet.has(makeRoleKey(r)));
@@ -2707,12 +3287,17 @@
       statUniqueSkills.textContent = analysisResults.totalUniqueSkills;
       statTsc.textContent = analysisResults.totalTscs;
 
+      document.querySelector('.content-title').setAttribute('data-role-count', analysisResults.totalRoles);
+
       emptyState.classList.add('hidden');
       resultsContainer.classList.remove('hidden');
 
       // Clear any previous selection
       clearSkillSelection();
       closeDetailPanel();
+
+      // Update bottom nav to show analysis as active
+      updateBottomNavActive('role');
 
       renderCurrentView();
     }
@@ -2732,20 +3317,31 @@
       compareContainer.classList.remove('active');
       skillViewContainer.classList.remove('active');
 
+      // Update desktop view toggle buttons
+      viewRoleBtn.classList.remove('active');
+      viewCompareBtn.classList.remove('active');
+      viewSkillBtn.classList.remove('active');
+
       switch (currentView) {
         case 'role':
           roleViewContainer.classList.add('active');
+          viewRoleBtn.classList.add('active');
           renderRoleView();
           break;
         case 'compare':
           compareContainer.classList.add('active');
+          viewCompareBtn.classList.add('active');
           renderCompareView();
           break;
         case 'skill':
           skillViewContainer.classList.add('active');
+          viewSkillBtn.classList.add('active');
           renderSkillView();
           break;
       }
+
+      // Update bottom nav
+      updateBottomNavActive(currentView);
     }
 
     function renderRoleView() {
@@ -3184,12 +3780,12 @@
 
         <div class="detail-section">
           <div class="detail-section-title">Comparison</div>
-          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <div style="flex: 1; padding: 0.5rem; background: var(--accent-soft); border-radius: var(--radius-md); border-left: 3px solid var(--accent-primary);">
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 120px; padding: 0.5rem; background: var(--accent-soft); border-radius: var(--radius-md); border-left: 3px solid var(--accent-primary);">
               <div style="font-size: 0.7rem; color: var(--accent-primary); font-weight: 600;">${escapeHtml(role1Data.role)}</div>
               <div style="font-size: 0.75rem; color: var(--text-secondary);">Level ${Array.from(skill1.proficiencies.keys()).sort().join(', ')}</div>
             </div>
-            <div style="flex: 1; padding: 0.5rem; background: rgba(139, 92, 246, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--accent-secondary);">
+            <div style="flex: 1; min-width: 120px; padding: 0.5rem; background: rgba(139, 92, 246, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--accent-secondary);">
               <div style="font-size: 0.7rem; color: var(--accent-secondary); font-weight: 600;">${escapeHtml(role2Data.role)}</div>
               <div style="font-size: 0.75rem; color: var(--text-secondary);">Level ${Array.from(skill2.proficiencies.keys()).sort().join(', ')}</div>
             </div>
@@ -3336,8 +3932,8 @@
         <div class="detail-section">
           <div class="detail-section-title">Required by Roles</div>
           ${skillData.roles.map(role => `
-            <div style="padding: 0.5rem; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 0.375rem; display: flex; justify-content: space-between; align-items: center;">
-              <div>
+            <div style="padding: 0.5rem; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 0.375rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="min-width: 0;">
                 <div style="font-size: 0.8rem; font-weight: 500; color: var(--text-primary);">${escapeHtml(role.name)}</div>
                 <div style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(role.sector)} · ${escapeHtml(role.track)}</div>
               </div>
@@ -3432,6 +4028,35 @@
     // EVENT LISTENERS
     // =========================================================================
     
+    // Mobile menu toggle
+    mobileMenuBtn.addEventListener('click', openSidebar);
+    sidebarBackdrop.addEventListener('click', closeSidebar);
+
+    // Bottom navigation
+    bottomNav.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.view;
+        
+        if (view === 'roles') {
+          openSidebar();
+          return;
+        }
+        
+        // If no analysis results yet, just open sidebar
+        if (!analysisResults) {
+          openSidebar();
+          return;
+        }
+        
+        // Update active state
+        updateBottomNavActive(view);
+        
+        // Switch view
+        currentView = view;
+        renderCurrentView();
+      });
+    });
+
     // File section toggle
     fileSectionHeader.addEventListener('click', () => {
       fileSectionContainer.classList.toggle('expanded');
@@ -3472,6 +4097,10 @@
         dropOverlay.classList.add('active');
         // Expand file section to show upload zone
         fileSectionContainer.classList.add('expanded');
+        // Open sidebar on mobile
+        if (isMobile) {
+          openSidebar();
+        }
       }
     });
 
@@ -3517,28 +4146,19 @@
     clearSelectionBtn.addEventListener('click', clearAllSelections);
     analyzeBtn.addEventListener('click', runAnalysis);
 
-    // View toggles
+    // View toggles (desktop)
     viewRoleBtn.addEventListener('click', () => {
       currentView = 'role';
-      viewRoleBtn.classList.add('active');
-      viewCompareBtn.classList.remove('active');
-      viewSkillBtn.classList.remove('active');
       renderCurrentView();
     });
 
     viewCompareBtn.addEventListener('click', () => {
       currentView = 'compare';
-      viewRoleBtn.classList.remove('active');
-      viewCompareBtn.classList.add('active');
-      viewSkillBtn.classList.remove('active');
       renderCurrentView();
     });
 
     viewSkillBtn.addEventListener('click', () => {
       currentView = 'skill';
-      viewRoleBtn.classList.remove('active');
-      viewCompareBtn.classList.remove('active');
-      viewSkillBtn.classList.add('active');
       renderCurrentView();
     });
 
@@ -3552,8 +4172,22 @@
     // Detail panel
     detailCloseBtn.addEventListener('click', closeDetailPanel);
 
+    // Handle resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        checkMobile();
+        if (!isMobile) {
+          closeSidebar();
+        }
+      }, 100);
+    });
+
     // Initialize
     (async function init() {
+      checkMobile();
+      
       // Try to load preloaded data
       const hasPreloadedData = await loadPreloadedData();
       
