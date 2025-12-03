@@ -1749,10 +1749,13 @@
         width: 85vw;
         max-width: 320px;
         height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
         z-index: 200;
         transform: translateX(-100%);
         transition: transform var(--transition-normal);
         box-shadow: var(--shadow-xl);
+        padding-bottom: env(safe-area-inset-bottom);
       }
 
       .sidebar.open {
@@ -2022,6 +2025,7 @@
       /* Always show minimal tray even when empty */
       .selection-tray .selection-tray-main {
         padding: 0.75rem 1rem;
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
       }
 
       .selected-roles-expandable.expanded {
@@ -3346,6 +3350,7 @@
 
     function renderRoleView() {
       roleCards.innerHTML = '';
+      const autoExpandSingleRole = analysisResults.totalRoles === 1;
 
       for (const [roleKey, data] of analysisResults.roles) {
         const card = document.createElement('div');
@@ -3399,6 +3404,10 @@
             </div>
           </div>
         `;
+
+        if (autoExpandSingleRole) {
+          card.classList.add('expanded');
+        }
 
         const header = card.querySelector('.role-card-header');
         header.addEventListener('click', () => {
@@ -3649,6 +3658,12 @@
     // =========================================================================
     // DETAIL PANEL - WITH K&A ITEMS SPLIT BY PROFICIENCY
     // =========================================================================
+    function openDetailPanel() {
+      detailPanel.classList.add('open');
+      detailPanel.scrollTop = 0;
+      detailBody.scrollTop = 0;
+    }
+
     function showSkillDetail(skillTitle, roleKey) {
       const roleData = analysisResults.roles.get(roleKey);
       const skillData = roleData.uniqueSkills.find(s => s.title === skillTitle);
@@ -3744,7 +3759,7 @@
       }
 
       detailBody.innerHTML = html;
-      detailPanel.classList.add('open');
+      openDetailPanel();
     }
 
     // Show skill detail for compare view (shared skills)
@@ -3901,7 +3916,7 @@
       }
 
       detailBody.innerHTML = html;
-      detailPanel.classList.add('open');
+      openDetailPanel();
     }
 
     // Show skill detail for skill-centric view
@@ -4016,7 +4031,7 @@
       }
 
       detailBody.innerHTML = html;
-      detailPanel.classList.add('open');
+      openDetailPanel();
     }
 
     function closeDetailPanel() {
