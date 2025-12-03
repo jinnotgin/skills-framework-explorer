@@ -1,0 +1,3406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Skills Framework Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- JSZip for decompressing preloaded data -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <!-- SheetJS for XLSX parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --bg-hover: #e2e8f0;
+      --bg-active: #dbeafe;
+      
+      --accent-primary: #3b82f6;
+      --accent-secondary: #8b5cf6;
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      --accent-soft: rgba(59, 130, 246, 0.1);
+      --accent-medium: rgba(59, 130, 246, 0.2);
+      
+      --success: #10b981;
+      --success-soft: rgba(16, 185, 129, 0.1);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.1);
+      --danger: #ef4444;
+      --danger-soft: rgba(239, 68, 68, 0.1);
+      
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --text-inverse: #ffffff;
+      
+      --border-light: #e2e8f0;
+      --border-medium: #cbd5e1;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-full: 9999px;
+      
+      --transition-fast: 150ms ease;
+      --transition-normal: 250ms ease;
+      --transition-slow: 350ms ease;
+      
+      --header-height: 56px;
+      --sidebar-width: 320px;
+      --detail-width: 540px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      height: var(--header-height);
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-gradient);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 1.1rem;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-status {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.375rem 0.75rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-full);
+      background: var(--text-muted);
+      transition: var(--transition-fast);
+    }
+
+    .status-dot.loaded {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    .status-dot.partial {
+      background: var(--warning);
+      box-shadow: 0 0 6px var(--warning);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .view-toggle {
+      display: flex;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      padding: 3px;
+    }
+
+    .view-toggle-btn {
+      padding: 0.4rem 0.875rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--radius-full);
+      transition: var(--transition-fast);
+    }
+
+    .view-toggle-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .view-toggle-btn.active {
+      background: var(--bg-secondary);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ===== MAIN LAYOUT ===== */
+    .app-container {
+      display: flex;
+      height: calc(100vh - var(--header-height));
+      margin-top: var(--header-height);
+    }
+
+    /* ===== LEFT SIDEBAR ===== */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-light);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    /* Collapsible file upload section */
+    .sidebar-file-section {
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .file-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: var(--transition-fast);
+    }
+
+    .file-section-header:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .file-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .file-section-status-wrapper {
+      display: flex;
+      gap: 1.25rem;
+    }
+
+    .file-section-status {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .file-section-status .mini-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: var(--radius-full);
+      background: var(--text-muted);
+    }
+
+    .file-section-status .mini-dot.loaded {
+      background: var(--success);
+    }
+
+    .file-section-status .mini-dot.partial {
+      background: var(--warning);
+    }
+
+    .file-section-chevron {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      transition: var(--transition-fast);
+    }
+
+    .sidebar-file-section.expanded .file-section-chevron {
+      transform: rotate(180deg);
+    }
+
+    .file-section-body {
+      display: none;
+      padding: 0 1rem 1rem;
+    }
+
+    .sidebar-file-section.expanded .file-section-body {
+      display: block;
+    }
+
+    .file-upload-zone {
+      border: 1.5px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      background: var(--bg-tertiary);
+    }
+
+    .file-upload-zone:hover {
+      border-color: var(--accent-primary);
+      background: var(--accent-soft);
+    }
+
+    .file-upload-zone.drag-over {
+      border-color: var(--accent-primary);
+      background: var(--accent-medium);
+    }
+
+    .file-upload-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .file-upload-hint {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-status-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      margin-top: 0.75rem;
+    }
+
+    .file-status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      font-size: 0.65rem;
+    }
+
+    .file-status-item .icon {
+      font-size: 0.6rem;
+    }
+
+    .file-status-item.loaded .icon {
+      color: var(--success);
+    }
+
+    .file-status-item.missing .icon {
+      color: var(--text-muted);
+    }
+
+    .file-status-item .label {
+      color: var(--text-secondary);
+    }
+
+    .file-status-item.loaded .label {
+      color: var(--text-primary);
+    }
+
+    /* ===== SIDEBAR MAIN CONTENT ===== */
+    .sidebar-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .sidebar-search-section {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .sidebar-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .search-box {
+      position: relative;
+      margin-bottom: 0.75rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.5rem 0.875rem 0.5rem 2.25rem;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      background: var(--bg-tertiary);
+      transition: var(--transition-fast);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      background: var(--bg-secondary);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .filter-select {
+      width: 100%;
+      padding: 0.4rem 0.625rem;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      background: var(--bg-secondary);
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+
+    /* ===== ROLE LIST ===== */
+    .role-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 1rem;
+      min-height: 0;
+    }
+
+    .sector-group {
+      margin-bottom: 0.375rem;
+    }
+
+    .sector-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.625rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      user-select: none;
+      transition: var(--transition-fast);
+    }
+
+    .sector-header:hover {
+      background: var(--bg-hover);
+    }
+
+    .sector-header .chevron {
+      transition: var(--transition-fast);
+      font-size: 0.65rem;
+    }
+
+    .sector-header.expanded .chevron {
+      transform: rotate(90deg);
+    }
+
+    .sector-header .count {
+      margin-left: auto;
+      background: var(--bg-hover);
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-full);
+      font-size: 0.6rem;
+      font-weight: 500;
+    }
+
+    .sector-roles {
+      display: none;
+      flex-direction: column;
+      gap: 1px;
+      padding: 0.375rem 0 0.375rem 0.75rem;
+    }
+
+    .sector-group.expanded .sector-roles {
+      display: flex;
+    }
+
+    .role-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.625rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .role-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .role-item.selected {
+      background: var(--accent-soft);
+    }
+
+    .role-checkbox {
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid var(--border-medium);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: var(--transition-fast);
+      font-size: 0.55rem;
+    }
+
+    .role-item.selected .role-checkbox {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+
+    .role-checkbox .check {
+      display: none;
+    }
+
+    .role-item.selected .role-checkbox .check {
+      display: block;
+    }
+
+    .role-name {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      flex: 1;
+    }
+
+    .role-item.selected .role-name {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ===== SELECTION TRAY (Bottom of sidebar) ===== */
+    .selection-tray {
+      border-top: 1px solid var(--border-light);
+      background: var(--bg-tertiary);
+    }
+
+    .selection-tray-main {
+      padding: 0.75rem 1rem;
+    }
+
+    .selection-tray-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .selection-count-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .selection-count {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .selection-expand-btn {
+      font-size: 0.65rem;
+      color: var(--accent-primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .selection-expand-btn:hover {
+      background: var(--accent-soft);
+    }
+
+    .selection-clear {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .selection-clear:hover {
+      color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    /* Expandable chips area */
+    .selected-roles-expandable {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height var(--transition-normal);
+    }
+
+    .selected-roles-expandable.expanded {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .selected-roles-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      padding: 0.75rem 0 0.25rem;
+    }
+
+    .selected-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.4rem;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--radius-full);
+      font-size: 0.65rem;
+      color: var(--accent-primary);
+    }
+
+    .selected-chip .remove {
+      cursor: pointer;
+      opacity: 0.7;
+      font-size: 0.7rem;
+    }
+
+    .selected-chip .remove:hover {
+      opacity: 1;
+    }
+
+    .analyze-btn {
+      width: 100%;
+      padding: 0.625rem 1rem;
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.625rem;
+      transition: var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .analyze-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .analyze-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ===== MAIN CONTENT AREA ===== */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-primary);
+      min-width: 0;
+    }
+
+    #resultsContainer {
+      overflow: auto;
+    }
+
+    .content-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-light);
+      background: var(--bg-secondary);
+      flex-shrink: 0;
+    }
+
+    .content-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.125rem;
+    }
+
+    .content-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .content-stats {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.875rem;
+    }
+
+    .stat-card {
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stat-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .stat-icon.roles {
+      background: var(--accent-soft);
+      color: var(--accent-primary);
+    }
+
+    .stat-icon.skills {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .stat-icon.tsc {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .stat-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    /* CRITICAL FIX: Content body scrolling */
+    .content-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 1.25rem;
+      min-height: 0;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.375rem;
+    }
+
+    .empty-state-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      max-width: 360px;
+    }
+
+    .empty-state-steps {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1.25rem;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      background: var(--accent-soft);
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .step-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* ===== VIEW CONTAINERS ===== */
+    .view-container {
+      display: none;
+    }
+
+    .view-container.active {
+      display: block;
+    }
+
+    /* ===== ROLE CARDS ===== */
+    .role-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+    }
+
+    .role-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .role-card-header {
+      padding: 0.875rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      background: var(--bg-secondary);
+    }
+
+    .role-card-header:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .role-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .role-card-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .role-card-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .role-card-badges {
+      display: flex;
+      gap: 0.375rem;
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+    }
+
+    .badge {
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-full);
+      font-size: 0.65rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-primary {
+      background: var(--accent-soft);
+      color: var(--accent-primary);
+    }
+
+    .badge-success {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .badge-warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .role-card-toggle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      transition: var(--transition-fast);
+      margin-left: 0.5rem;
+    }
+
+    .role-card.expanded .role-card-toggle {
+      transform: rotate(180deg);
+    }
+
+    .role-card-body {
+      display: none;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .role-card.expanded .role-card-body {
+      display: block;
+    }
+
+    /* ===== SKILLS SECTION ===== */
+    .skills-section {
+      padding: 0.875rem 1rem;
+    }
+
+    .skills-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.625rem;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .skills-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .skill-row {
+      display: flex;
+      align-items: center;
+      padding: 0.625rem 0.875rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      border: 1px solid transparent;
+    }
+
+    .skill-row:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-medium);
+    }
+
+    .skill-row.active {
+      background: var(--accent-soft);
+      border-color: var(--accent-primary);
+    }
+
+    .skill-row-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.625rem;
+      font-size: 0.8rem;
+    }
+
+    .skill-row-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .skill-row-title {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .skill-row-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .skill-row-badges {
+      display: flex;
+      gap: 0.25rem;
+      margin-left: 0.5rem;
+    }
+
+    .proficiency-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      color: white;
+    }
+
+    .skill-row-arrow {
+      color: var(--text-muted);
+      margin-left: 0.375rem;
+      font-size: 0.8rem;
+    }
+
+    /* ===== DETAIL PANEL ===== */
+    .detail-panel {
+      width: 0;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border-light);
+      overflow: hidden;
+      transition: width var(--transition-normal);
+      flex-shrink: 0;
+    }
+
+    .detail-panel.open {
+      width: var(--detail-width);
+    }
+
+    .detail-panel-inner {
+      width: var(--detail-width);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-panel-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .detail-panel-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .detail-panel-close {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+      flex-shrink: 0;
+    }
+
+    .detail-panel-close:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .detail-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      min-height: 0;
+    }
+
+    .detail-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .detail-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .detail-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .detail-content {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .detail-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+    }
+
+    /* Detail K&A styling */
+    .detail-ka-section {
+      margin-bottom: 1rem;
+    }
+
+    .detail-ka-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .detail-ka-title.knowledge {
+      color: var(--accent-primary);
+    }
+
+    .detail-ka-title.ability {
+      color: var(--success);
+    }
+
+    .detail-ka-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .detail-ka-item {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      padding: 0.4rem 0.625rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.4rem;
+    }
+
+    .detail-proficiency-section {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    .detail-proficiency-level {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--accent-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .detail-proficiency-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .proficiency-group {
+      margin-bottom: 1.25rem;
+      padding: 0.875rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+    }
+
+    .proficiency-group-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .proficiency-group-level {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      background: var(--accent-gradient);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .proficiency-group-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .proficiency-group-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+      padding: 0.5rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    /* ===== COMPARE VIEW ===== */
+    .compare-header {
+      display: flex;
+      gap: 0.875rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.875rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .compare-role-card {
+      flex: 1;
+      padding: 0.875rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 2px solid var(--border-light);
+    }
+
+    .compare-role-card:nth-child(1) {
+      border-color: var(--accent-primary);
+    }
+
+    .compare-role-card:nth-child(2) {
+      border-color: var(--accent-secondary);
+    }
+
+    .compare-role-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      margin-bottom: 0.125rem;
+    }
+
+    .compare-role-sector {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .compare-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .compare-section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0.875rem;
+    }
+
+    .compare-column {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .compare-column-header {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      padding-bottom: 0.375rem;
+      border-bottom: 1px solid var(--border-light);
+      text-align: center;
+    }
+
+    .compare-skill-item {
+      padding: 0.625rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .compare-skill-item:hover {
+      border-color: var(--accent-primary);
+      background: var(--accent-soft);
+    }
+
+    .compare-skill-item.active {
+      border-color: var(--accent-primary);
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 2px var(--accent-medium);
+    }
+
+    .compare-skill-name {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .compare-skill-level {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.125rem;
+    }
+
+    .compare-divider {
+      width: 2px;
+      background: var(--border-light);
+      position: relative;
+    }
+
+    .compare-divider::before {
+      content: '∩';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 28px;
+      height: 28px;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .proficiency-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      font-size: 0.7rem;
+      padding: 0.1rem 0.3rem;
+      border-radius: var(--radius-sm);
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    /* ===== SKILL-CENTRIC VIEW ===== */
+    .skill-search-section {
+      margin-bottom: 1rem;
+    }
+
+    .skill-results {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .skill-result-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+
+    .skill-result-header {
+      padding: 0.875rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: var(--transition-fast);
+    }
+
+    .skill-result-header:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .skill-result-info {
+      flex: 1;
+    }
+
+    .skill-result-title {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+    }
+
+    .skill-result-count {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .skill-result-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .skill-info-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      transition: var(--transition-fast);
+    }
+
+    .skill-info-btn:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    .skill-info-btn.active {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+
+    .skill-result-expand {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      transition: var(--transition-fast);
+    }
+
+    .skill-result-card.expanded .skill-result-expand {
+      transform: rotate(180deg);
+    }
+
+    .skill-result-roles {
+      display: none;
+      padding: 0.875rem 1rem;
+      border-top: 1px solid var(--border-light);
+      background: var(--bg-tertiary);
+    }
+
+    .skill-result-card.expanded .skill-result-roles {
+      display: block;
+    }
+
+    .role-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      margin-bottom: 0.375rem;
+      transition: var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .role-link:hover {
+      background: var(--accent-soft);
+    }
+
+    .role-link:last-child {
+      margin-bottom: 0;
+    }
+
+    .role-link-name {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+    }
+
+    .role-link-sector {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* ===== UTILITIES ===== */
+    .hidden {
+      display: none !important;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-medium);
+      border-radius: var(--radius-full);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.25s ease forwards;
+    }
+
+    /* Full-page drop overlay */
+    .drop-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(95, 36, 159, 0.15);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .drop-overlay.active {
+      display: flex;
+    }
+
+    .drop-overlay-content {
+      padding: 2rem 3rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      border: 3px dashed var(--accent-primary);
+      text-align: center;
+    }
+
+    .drop-overlay-icon {
+      font-size: 3rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .drop-overlay-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent-primary);
+    }
+
+    .drop-overlay-hint {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 1024px) {
+      .detail-panel.open {
+        position: fixed;
+        right: 0;
+        top: var(--header-height);
+        height: calc(100vh - var(--header-height));
+        z-index: 50;
+        box-shadow: var(--shadow-xl);
+      }
+    }
+
+    /* Fix alignment - ka item bullets */
+    .ka-item-bullet {
+      width: 5px;
+      height: 5px;
+      border-radius: var(--radius-full);
+      margin-top: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .ka-item-bullet.knowledge {
+      background: var(--accent-primary);
+    }
+
+    .ka-item-bullet.ability {
+      background: var(--success);
+    }
+  </style>
+</head>
+<body>
+  <!-- Full-page drop overlay -->
+  <div class="drop-overlay" id="dropOverlay">
+    <div class="drop-overlay-content">
+      <div class="drop-overlay-icon">📂</div>
+      <div class="drop-overlay-text">Drop files here</div>
+      <div class="drop-overlay-hint">Upload your SkillsFuture XLSX files</div>
+    </div>
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <div class="logo-icon">SF</div>
+        <span class="logo-text">Skills Framework Explorer</span>
+      </div>
+      <div class="header-status">
+        <span id="globalStatusDot" class="status-dot"></span>
+        <span id="globalStatusText" style="font-size: 0.7rem; color: var(--text-muted);">No files loaded</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="view-toggle">
+        <button id="viewRoleBtn" class="view-toggle-btn active">Role-Centric</button>
+        <button id="viewCompareBtn" class="view-toggle-btn">Compare</button>
+        <button id="viewSkillBtn" class="view-toggle-btn">Skill-Centric</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN LAYOUT ===== -->
+  <div class="app-container">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <!-- Collapsible File Upload Section -->
+      <div class="sidebar-file-section" id="fileSectionContainer">
+        <div class="file-section-header" id="fileSectionHeader">
+          <span class="file-section-title">
+            <span>📁</span>
+            <span>Data Files</span>
+          </span>
+          <div class="file-section-status-wrapper">
+            <div class="file-section-status">
+              <span id="miniDot1" class="mini-dot"></span>
+              <span id="miniDot2" class="mini-dot"></span>
+              <span id="miniDot3" class="mini-dot"></span>
+            </div>
+            <span class="file-section-chevron">▼</span>
+          </div>
+        </div>
+        <div class="file-section-body">
+          <div class="file-upload-zone" id="fileUploadZone">
+            <div class="file-upload-text">Drop XLSX files or click to browse</div>
+            <div class="file-upload-hint">Upload all 3 SkillsFuture files</div>
+            <input type="file" class="file-input" id="fileInput" accept=".xlsx" multiple />
+          </div>
+          <div class="file-status-list">
+            <div id="statusFramework" class="file-status-item missing">
+              <span class="icon">○</span>
+              <span class="label">Framework</span>
+            </div>
+            <div id="statusTscMap" class="file-status-item missing">
+              <span class="icon">○</span>
+              <span class="label">TSC Mapping</span>
+            </div>
+            <div id="statusUnique" class="file-status-item missing">
+              <span class="icon">○</span>
+              <span class="label">Unique Skills</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main sidebar content -->
+      <div class="sidebar-main">
+        <div class="sidebar-search-section">
+          <div class="sidebar-title">Find Job Roles</div>
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="roleSearchInput" placeholder="Search roles..." />
+          </div>
+          <select class="filter-select" id="sectorFilter">
+            <option value="">All Sectors</option>
+          </select>
+        </div>
+
+        <div class="role-list-container" id="roleListContainer">
+          <div id="roleList">
+            <div class="empty-state" style="padding: 1.5rem 0.75rem;">
+              <div style="font-size: 1.5rem; opacity: 0.5; margin-bottom: 0.375rem;">📋</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Upload files to see roles</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selection Tray -->
+      <div class="selection-tray" id="selectionTray">
+        <div class="selection-tray-main">
+          <div class="selection-tray-header">
+            <div class="selection-count-wrapper">
+              <span class="selection-count"><span id="selectedCount">0</span> selected</span>
+              <button class="selection-expand-btn" id="selectionExpandBtn">View ▲</button>
+            </div>
+            <button class="selection-clear" id="clearSelectionBtn">Clear</button>
+          </div>
+          <div class="selected-roles-expandable" id="selectedRolesExpandable">
+            <div class="selected-roles-chips" id="selectedChips">
+              <!-- Selected role chips -->
+            </div>
+          </div>
+          <button class="analyze-btn" id="analyzeBtn" disabled>
+            <span>Analyze Skills</span>
+            <span>→</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <!-- EMPTY STATE -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">🎯</div>
+        <div class="empty-state-title">Ready to explore skills?</div>
+        <div class="empty-state-text">
+          Upload your SkillsFuture XLSX files, select job roles, and analyze the technical skills and competencies required.
+        </div>
+        <div class="empty-state-steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-text">Upload files</div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-text">Select roles</div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-text">Analyze</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS CONTAINER -->
+      <div class="results-container hidden" id="resultsContainer">
+        <div class="content-header">
+          <div class="content-title">Skills Analysis</div>
+          <div class="content-subtitle" id="resultsSubtitle">Viewing skills for selected roles</div>
+          <div class="content-stats">
+            <div class="stat-card">
+              <div class="stat-icon roles">👤</div>
+              <div>
+                <div class="stat-value" id="statRoles">0</div>
+                <div class="stat-label">Roles</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon skills">💡</div>
+              <div>
+                <div class="stat-value" id="statUniqueSkills">0</div>
+                <div class="stat-label">Unique Skills</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon tsc">📊</div>
+              <div>
+                <div class="stat-value" id="statTsc">0</div>
+                <div class="stat-label">TSC/CCS</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-body" id="contentBody">
+          <!-- Role-Centric View -->
+          <div class="view-container active" id="roleViewContainer">
+            <div class="role-cards" id="roleCards"></div>
+          </div>
+
+          <!-- Compare View -->
+          <div class="view-container" id="compareContainer">
+            <div id="compareContent"></div>
+          </div>
+
+          <!-- Skill-Centric View -->
+          <div class="view-container" id="skillViewContainer">
+            <div class="skill-search-section">
+              <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="skillSearchInput" placeholder="Search unique skills..." />
+              </div>
+            </div>
+            <div class="skill-results" id="skillResults"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- DETAIL PANEL -->
+    <aside class="detail-panel" id="detailPanel">
+      <div class="detail-panel-inner">
+        <div class="detail-panel-header">
+          <div class="detail-panel-title" id="detailTitle">Skill Details</div>
+          <button class="detail-panel-close" id="detailCloseBtn">✕</button>
+        </div>
+        <div class="detail-panel-body" id="detailBody"></div>
+      </div>
+    </aside>
+  </div>
+  <script>
+    // =========================================================================
+    // PRELOADED DATA - Will be fetched from relative URL
+    // =========================================================================
+    let PRELOADED_DATA = null;
+  </script>
+
+  <script>
+    // =========================================================================
+    // PRELOAD DATA FUNCTION - Fetches from zipped JSON
+    // =========================================================================
+    async function fetchPreloadedData(url = './skills-framework-data.json.zip') {
+      try {
+        console.log(`Fetching preloaded data from: ${url}`);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          console.log(`No preloaded data found at ${url} (${response.status})`);
+          return null;
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        
+        // Find the JSON file in the zip (assumes single JSON file)
+        const jsonFileName = Object.keys(zip.files).find(name => name.endsWith('.json'));
+        
+        if (!jsonFileName) {
+          console.error('No JSON file found in zip archive');
+          return null;
+        }
+        
+        const jsonContent = await zip.file(jsonFileName).async('string');
+        return JSON.parse(jsonContent);
+      } catch (err) {
+        console.log('Could not fetch preloaded data:', err.message);
+        return null;
+      }
+    }
+
+    async function loadPreloadedData() {
+      if (!PRELOADED_DATA) {
+        PRELOADED_DATA = await fetchPreloadedData();
+      }
+      
+      if (!PRELOADED_DATA || Object.keys(PRELOADED_DATA).length === 0) {
+        console.log('No preloaded data available');
+        return false;
+      }
+
+      try {
+        // Load the raw data arrays
+        jobRoleDescriptions = PRELOADED_DATA.jobRoleDescriptions || [];
+        jobRoleTcsCcs = PRELOADED_DATA.jobRoleTcsCcs || [];
+        tscKAndA = PRELOADED_DATA.tscKAndA || [];
+        tscToUnique = PRELOADED_DATA.tscToUnique || [];
+        uniqueSkillsList = PRELOADED_DATA.uniqueSkillsList || [];
+
+        // Mark workbooks as loaded (for UI status)
+        frameworkWb = { loaded: true };
+        tscMapWb = { loaded: true };
+        uniqueWb = { loaded: true };
+
+        // Update file status indicators
+        updateFileStatus(statusFramework, true);
+        updateFileStatus(statusTscMap, true);
+        updateFileStatus(statusUnique, true);
+
+        // Build the lookup maps
+        buildMaps();
+
+        // Populate the role list
+        populateRoleList();
+
+        // Update global status
+        updateGlobalStatus();
+
+        console.log('✓ Preloaded data successfully!');
+        console.log(`  - ${jobRoleDescriptions.length} job role descriptions`);
+        console.log(`  - ${jobRoleTcsCcs.length} job role TSC/CCS entries`);
+        console.log(`  - ${tscKAndA.length} TSC K&A entries`);
+        console.log(`  - ${tscToUnique.length} TSC to unique mappings`);
+        console.log(`  - ${uniqueSkillsList.length} unique skills`);
+
+        return true;
+      } catch (err) {
+        console.error('Error loading preloaded data:', err);
+        return false;
+      }
+    }
+
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    let frameworkWb = null;
+    let tscMapWb = null;
+    let uniqueWb = null;
+
+    let jobRoleDescriptions = [];
+    let jobRoleTcsCcs = [];
+    let tscKAndA = [];
+    let tscToUnique = [];
+    let uniqueSkillsList = [];
+
+    let tscInfoByCode = new Map();
+    let tscMappingByCodeProf = new Map();
+    let tscMappingByCode = new Map();
+    let uniqueSkillByTitle = new Map();
+    let kAndAByCodeProf = new Map();
+
+    let selectedRoleKeys = new Set();
+    let currentView = 'role';
+    let analysisResults = null;
+    let chipsExpanded = false;
+
+    // Track currently selected skill element
+    let currentlySelectedSkillElement = null;
+    let currentlySelectedSkillKey = null;
+
+    let dragCounter = 0; // Track drag enter/leave for nested elements
+
+    // =========================================================================
+    // DOM ELEMENTS
+    // =========================================================================
+    const fileInput = document.getElementById('fileInput');
+    const fileUploadZone = document.getElementById('fileUploadZone');
+    const fileSectionContainer = document.getElementById('fileSectionContainer');
+    const fileSectionHeader = document.getElementById('fileSectionHeader');
+    const dropOverlay = document.getElementById('dropOverlay');
+    const statusFramework = document.getElementById('statusFramework');
+    const statusTscMap = document.getElementById('statusTscMap');
+    const statusUnique = document.getElementById('statusUnique');
+    const miniDot1 = document.getElementById('miniDot1');
+    const miniDot2 = document.getElementById('miniDot2');
+    const miniDot3 = document.getElementById('miniDot3');
+    const globalStatusDot = document.getElementById('globalStatusDot');
+    const globalStatusText = document.getElementById('globalStatusText');
+
+    const roleSearchInput = document.getElementById('roleSearchInput');
+    const sectorFilter = document.getElementById('sectorFilter');
+    const roleList = document.getElementById('roleList');
+
+    const selectedCount = document.getElementById('selectedCount');
+    const selectedChips = document.getElementById('selectedChips');
+    const selectedRolesExpandable = document.getElementById('selectedRolesExpandable');
+    const selectionExpandBtn = document.getElementById('selectionExpandBtn');
+    const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+
+    const emptyState = document.getElementById('emptyState');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const contentBody = document.getElementById('contentBody');
+    const roleViewContainer = document.getElementById('roleViewContainer');
+    const compareContainer = document.getElementById('compareContainer');
+    const skillViewContainer = document.getElementById('skillViewContainer');
+    const roleCards = document.getElementById('roleCards');
+
+    const viewRoleBtn = document.getElementById('viewRoleBtn');
+    const viewCompareBtn = document.getElementById('viewCompareBtn');
+    const viewSkillBtn = document.getElementById('viewSkillBtn');
+
+    const detailPanel = document.getElementById('detailPanel');
+    const detailTitle = document.getElementById('detailTitle');
+    const detailBody = document.getElementById('detailBody');
+    const detailCloseBtn = document.getElementById('detailCloseBtn');
+
+    const statRoles = document.getElementById('statRoles');
+    const statUniqueSkills = document.getElementById('statUniqueSkills');
+    const statTsc = document.getElementById('statTsc');
+
+    // =========================================================================
+    // UTILITIES
+    // =========================================================================
+    function safeStr(v) {
+      return (v === null || v === undefined) ? '' : String(v).trim();
+    }
+
+    function makeRoleKey(r) {
+      return safeStr(r['Sector']) + '|||' + safeStr(r['Track']) + '|||' + safeStr(r['Job Role']);
+    }
+
+    function parseRoleKey(key) {
+      const [sector, track, role] = key.split('|||');
+      return { sector, track, role };
+    }
+
+    function escapeHtml(str) {
+      return safeStr(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function uniqueBy(arr, keyFn) {
+      const seen = new Set();
+      const out = [];
+      for (const item of arr) {
+        const key = keyFn(item);
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(item);
+        }
+      }
+      return out;
+    }
+
+    function sheetToJsonIfExists(wb, sheetName) {
+      if (!wb.SheetNames.includes(sheetName)) return [];
+      const ws = wb.Sheets[sheetName];
+      return XLSX.utils.sheet_to_json(ws, { defval: null });
+    }
+
+    // Clear selected skill highlight
+    function clearSkillSelection() {
+      if (currentlySelectedSkillElement) {
+        currentlySelectedSkillElement.classList.remove('active');
+        currentlySelectedSkillElement = null;
+      }
+      currentlySelectedSkillKey = null;
+    }
+
+    // =========================================================================
+    // FILE UPLOAD & PARSING
+    // =========================================================================
+    function updateFileStatus(el, loaded, filename = '') {
+      el.classList.remove('loaded', 'missing');
+      el.classList.add(loaded ? 'loaded' : 'missing');
+      el.querySelector('.icon').textContent = loaded ? '✓' : '○';
+    }
+
+    function updateGlobalStatus() {
+      const loadedCount = [frameworkWb, tscMapWb, uniqueWb].filter(Boolean).length;
+      
+      // Update mini dots
+      miniDot1.className = 'mini-dot' + (frameworkWb ? ' loaded' : '');
+      miniDot2.className = 'mini-dot' + (tscMapWb ? ' loaded' : '');
+      miniDot3.className = 'mini-dot' + (uniqueWb ? ' loaded' : '');
+
+      if (loadedCount === 0) {
+        globalStatusDot.className = 'status-dot';
+        globalStatusText.textContent = 'No files loaded';
+      } else if (loadedCount < 3) {
+        globalStatusDot.className = 'status-dot partial';
+        globalStatusText.textContent = `${loadedCount}/3 files loaded`;
+      } else {
+        globalStatusDot.className = 'status-dot loaded';
+        globalStatusText.textContent = 'All files loaded';
+        // Collapse file section when all loaded
+        fileSectionContainer.classList.remove('expanded');
+      }
+    }
+
+    async function handleFiles(files) {
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        let wb;
+        try {
+          wb = XLSX.read(buffer, { type: 'array' });
+        } catch (err) {
+          console.error('Error reading workbook', file.name, err);
+          continue;
+        }
+
+        const sheets = new Set(wb.SheetNames);
+
+        if (sheets.has('Job Role_Description') && sheets.has('Job Role_TCS_CCS')) {
+          frameworkWb = wb;
+          updateFileStatus(statusFramework, true, file.name);
+        } else if (sheets.has('TSC to Unique Skill Mapping')) {
+          tscMapWb = wb;
+          updateFileStatus(statusTscMap, true, file.name);
+        } else if (sheets.has('Unique Skills List')) {
+          uniqueWb = wb;
+          updateFileStatus(statusUnique, true, file.name);
+        }
+      }
+
+      loadDataFromWorkbooks();
+      buildMaps();
+      populateRoleList();
+      updateGlobalStatus();
+    }
+
+    function loadDataFromWorkbooks() {
+      if (frameworkWb) {
+        jobRoleDescriptions = sheetToJsonIfExists(frameworkWb, 'Job Role_Description');
+        jobRoleTcsCcs = sheetToJsonIfExists(frameworkWb, 'Job Role_TCS_CCS');
+        tscKAndA = sheetToJsonIfExists(frameworkWb, 'TSC_CCS_K&A');
+      }
+      if (tscMapWb) {
+        tscToUnique = sheetToJsonIfExists(tscMapWb, 'TSC to Unique Skill Mapping');
+      }
+      if (uniqueWb) {
+        uniqueSkillsList = sheetToJsonIfExists(uniqueWb, 'Unique Skills List');
+      }
+    }
+
+    function buildMaps() {
+      tscInfoByCode.clear();
+      kAndAByCodeProf.clear();
+
+      for (const row of tscKAndA) {
+        const type = safeStr(row['TSC_CCS Type']).toLowerCase();
+        const code = safeStr(row['TSC_CCS Code']);
+        if (!code) continue;
+
+        if (!tscInfoByCode.has(code) && type) {
+          tscInfoByCode.set(code, {
+            title: safeStr(row['TSC_CCS Title']),
+            description: safeStr(row['TSC_CCS Description']),
+            category: safeStr(row['TSC_CCS Category']),
+            sector: safeStr(row['Sector']),
+          });
+        }
+
+        const prof = safeStr(row['Proficiency Level']);
+        if (!prof) continue;
+
+        const key = code + '|' + prof;
+        let entry = kAndAByCodeProf.get(key);
+        if (!entry) {
+          entry = {
+            code,
+            proficiencyLevel: prof,
+            proficiencyDescription: '',
+            knowledgeItems: [],
+            abilityItems: [],
+          };
+          kAndAByCodeProf.set(key, entry);
+        }
+
+        const profDesc = safeStr(row['Proficiency Description']);
+        if (profDesc && !entry.proficiencyDescription) {
+          entry.proficiencyDescription = profDesc;
+        }
+
+        const item = safeStr(row['Knowledge / Ability Items']);
+        const klass = safeStr(row['Knowledge / Ability Classification']).toLowerCase();
+        if (item) {
+          if (klass.includes('knowledge')) {
+            entry.knowledgeItems.push(item);
+          } else if (klass.includes('ability')) {
+            entry.abilityItems.push(item);
+          } else {
+            entry.knowledgeItems.push(item);
+          }
+        }
+      }
+
+      uniqueSkillByTitle.clear();
+      for (const row of uniqueSkillsList) {
+        const title = safeStr(row['parent_skill_title']);
+        if (!title) continue;
+        if (!uniqueSkillByTitle.has(title)) {
+          uniqueSkillByTitle.set(title, row);
+        }
+      }
+
+      tscMappingByCodeProf.clear();
+      tscMappingByCode.clear();
+      for (const row of tscToUnique) {
+        const code = safeStr(row['tsc_code']);
+        if (!code) continue;
+        const prof = safeStr(row['proficiency_level']);
+        if (prof) {
+          const key = code + '|' + prof;
+          if (!tscMappingByCodeProf.has(key)) {
+            tscMappingByCodeProf.set(key, row);
+          }
+        }
+        if (!tscMappingByCode.has(code)) {
+          tscMappingByCode.set(code, row);
+        }
+      }
+    }
+
+    // =========================================================================
+    // ROLE LIST POPULATION
+    // =========================================================================
+    function populateRoleList() {
+      roleList.innerHTML = '';
+      sectorFilter.innerHTML = '<option value="">All Sectors</option>';
+
+      if (!jobRoleDescriptions.length) {
+        roleList.innerHTML = `
+          <div class="empty-state" style="padding: 1.5rem 0.75rem;">
+            <div style="font-size: 1.5rem; opacity: 0.5; margin-bottom: 0.375rem;">📋</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Upload files to see roles</div>
+          </div>
+        `;
+        return;
+      }
+
+      const uniqueRoles = uniqueBy(jobRoleDescriptions, r => makeRoleKey(r));
+      
+      const sectorGroups = new Map();
+      for (const row of uniqueRoles) {
+        const sector = safeStr(row['Sector']) || 'Unknown Sector';
+        if (!sectorGroups.has(sector)) {
+          sectorGroups.set(sector, []);
+        }
+        sectorGroups.get(sector).push(row);
+      }
+
+      const sortedSectors = Array.from(sectorGroups.keys()).sort();
+      for (const sector of sortedSectors) {
+        const opt = document.createElement('option');
+        opt.value = sector;
+        opt.textContent = sector;
+        sectorFilter.appendChild(opt);
+      }
+
+      for (const sector of sortedSectors) {
+        const roles = sectorGroups.get(sector);
+        roles.sort((a, b) => safeStr(a['Job Role']).localeCompare(safeStr(b['Job Role'])));
+
+        const groupEl = document.createElement('div');
+        groupEl.className = 'sector-group';
+        groupEl.dataset.sector = sector;
+
+        const headerEl = document.createElement('div');
+        headerEl.className = 'sector-header';
+        headerEl.innerHTML = `
+          <span class="chevron">▶</span>
+          <span class="sector-name">${escapeHtml(sector)}</span>
+          <span class="count">${roles.length}</span>
+        `;
+        headerEl.addEventListener('click', () => {
+          groupEl.classList.toggle('expanded');
+          headerEl.classList.toggle('expanded');
+        });
+
+        const rolesEl = document.createElement('div');
+        rolesEl.className = 'sector-roles';
+
+        for (const role of roles) {
+          const roleKey = makeRoleKey(role);
+          const roleName = safeStr(role['Job Role']);
+
+          const roleEl = document.createElement('div');
+          roleEl.className = 'role-item';
+          roleEl.dataset.roleKey = roleKey;
+          roleEl.dataset.roleName = roleName.toLowerCase();
+          roleEl.dataset.sector = sector.toLowerCase();
+
+          const trackName = safeStr(role['Track']);
+          roleEl.innerHTML = `
+            <div class="role-checkbox"><span class="check">✓</span></div>
+            <div class="role-name-wrapper" style="display: flex; flex-direction: column; gap: 0.125rem;">
+              <span class="role-name">${escapeHtml(roleName)}</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted);">${escapeHtml(trackName)}</span>
+            </div>
+          `;
+
+          roleEl.addEventListener('click', () => toggleRoleSelection(roleKey, roleEl));
+          rolesEl.appendChild(roleEl);
+        }
+
+        groupEl.appendChild(headerEl);
+        groupEl.appendChild(rolesEl);
+        roleList.appendChild(groupEl);
+      }
+    }
+
+    function toggleRoleSelection(roleKey, roleEl) {
+      if (selectedRoleKeys.has(roleKey)) {
+        selectedRoleKeys.delete(roleKey);
+        roleEl.classList.remove('selected');
+      } else {
+        selectedRoleKeys.add(roleKey);
+        roleEl.classList.add('selected');
+      }
+      updateSelectionTray();
+    }
+
+    function updateSelectionTray() {
+      selectedCount.textContent = selectedRoleKeys.size;
+      analyzeBtn.disabled = selectedRoleKeys.size === 0;
+      
+      // Update expand button text
+      selectionExpandBtn.textContent = chipsExpanded ? 'Hide ▼' : 'View ▲';
+      selectionExpandBtn.style.display = selectedRoleKeys.size > 0 ? 'inline-block' : 'none';
+
+      selectedChips.innerHTML = '';
+      for (const key of selectedRoleKeys) {
+        const { role, track } = parseRoleKey(key);
+        const chip = document.createElement('span');
+        chip.className = 'selected-chip';
+        chip.innerHTML = `
+          <span>${escapeHtml(role)} <span style="opacity: 0.7; font-size: 0.6rem;">(${escapeHtml(track)})</span></span>
+          <span class="remove" data-key="${escapeHtml(key)}">×</span>
+        `;
+        chip.querySelector('.remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          removeRoleSelection(key);
+        });
+        selectedChips.appendChild(chip);
+      }
+    }
+
+    function removeRoleSelection(key) {
+      selectedRoleKeys.delete(key);
+      const roleEl = document.querySelector(`.role-item[data-role-key="${CSS.escape(key)}"]`);
+      if (roleEl) {
+        roleEl.classList.remove('selected');
+      }
+      updateSelectionTray();
+    }
+
+    function clearAllSelections() {
+      selectedRoleKeys.clear();
+      document.querySelectorAll('.role-item.selected').forEach(el => el.classList.remove('selected'));
+      updateSelectionTray();
+    }
+
+    function toggleChipsExpanded() {
+      chipsExpanded = !chipsExpanded;
+      selectedRolesExpandable.classList.toggle('expanded', chipsExpanded);
+      selectionExpandBtn.textContent = chipsExpanded ? 'Hide ▼' : 'View ▲';
+    }
+
+    // =========================================================================
+    // FILTERING
+    // =========================================================================
+    function applyFilters() {
+      const query = roleSearchInput.value.trim().toLowerCase();
+      const selectedSector = sectorFilter.value;
+
+      document.querySelectorAll('.sector-group').forEach(groupEl => {
+        const sector = groupEl.dataset.sector;
+        const matchesSector = !selectedSector || sector === selectedSector;
+
+        if (!matchesSector) {
+          groupEl.classList.add('hidden');
+          return;
+        }
+
+        let hasVisibleRoles = false;
+        groupEl.querySelectorAll('.role-item').forEach(roleEl => {
+          const roleName = roleEl.dataset.roleName;
+          const roleSector = roleEl.dataset.sector;
+          const matchesQuery = !query || roleName.includes(query) || roleSector.includes(query);
+
+          if (matchesQuery) {
+            roleEl.classList.remove('hidden');
+            hasVisibleRoles = true;
+          } else {
+            roleEl.classList.add('hidden');
+          }
+        });
+
+        if (hasVisibleRoles) {
+          groupEl.classList.remove('hidden');
+          if (query) {
+            groupEl.classList.add('expanded');
+            groupEl.querySelector('.sector-header').classList.add('expanded');
+          }
+        } else {
+          groupEl.classList.add('hidden');
+        }
+      });
+    }
+
+    // =========================================================================
+    // ANALYSIS
+    // =========================================================================
+    function runAnalysis() {
+      if (selectedRoleKeys.size === 0) return;
+
+      const keySet = selectedRoleKeys;
+      const roles = jobRoleDescriptions.filter(r => keySet.has(makeRoleKey(r)));
+      const tscRows = jobRoleTcsCcs.filter(r => keySet.has(makeRoleKey(r)));
+
+      const roleAnalysis = new Map();
+      const allUniqueSkills = new Map();
+      let totalTscCount = 0;
+
+      for (const roleKey of keySet) {
+        const { sector, track, role } = parseRoleKey(roleKey);
+        const roleDesc = roles.find(r => makeRoleKey(r) === roleKey);
+        const roleTscs = tscRows.filter(r => makeRoleKey(r) === roleKey);
+
+        const uniqueSkillsMap = new Map();
+        const tscList = [];
+
+        for (const tsc of roleTscs) {
+          const code = safeStr(tsc['TSC_CCS Code']);
+          const prof = safeStr(tsc['Proficiency Level']);
+          const type = safeStr(tsc['TSC_CCS Type']);
+          const info = tscInfoByCode.get(code) || {};
+
+          const mappingKey = code && prof ? (code + '|' + prof) : null;
+          const mapping = mappingKey && tscMappingByCodeProf.has(mappingKey)
+            ? tscMappingByCodeProf.get(mappingKey)
+            : tscMappingByCode.get(code);
+
+          const parentSkillTitle = mapping ? safeStr(mapping['parent_skill_title']) : '';
+          const skillType = mapping ? safeStr(mapping['skill_type']) : '';
+          const isEmerging = mapping && mapping['Emerging Skills'];
+          const isCasl = mapping && mapping['CASL Skills'];
+
+          const kAndAKey = code + '|' + prof;
+          const kAndA = kAndAByCodeProf.get(kAndAKey);
+
+          const tscData = {
+            code,
+            title: info.title || code,
+            type,
+            proficiency: prof,
+            proficiencyDescription: kAndA ? kAndA.proficiencyDescription : '',
+            knowledgeItems: kAndA ? kAndA.knowledgeItems : [],
+            abilityItems: kAndA ? kAndA.abilityItems : [],
+            category: info.category || '',
+            parentSkillTitle,
+            skillType,
+            isEmerging,
+            isCasl
+          };
+
+          tscList.push(tscData);
+          totalTscCount++;
+
+          if (parentSkillTitle) {
+            if (!uniqueSkillsMap.has(parentSkillTitle)) {
+              const uniqueRow = uniqueSkillByTitle.get(parentSkillTitle);
+              uniqueSkillsMap.set(parentSkillTitle, {
+                title: parentSkillTitle,
+                description: uniqueRow ? safeStr(uniqueRow['parent_skill_description']) : '',
+                skillType,
+                isEmerging,
+                isCasl,
+                proficiencies: new Map(), // Changed to Map to store per-level data
+                tscs: new Map()
+              });
+            }
+            
+            // Store TSC data per proficiency level
+            const skillEntry = uniqueSkillsMap.get(parentSkillTitle);
+            if (!skillEntry.proficiencies.has(prof)) {
+              skillEntry.proficiencies.set(prof, {
+                level: prof,
+                proficiencyDescription: tscData.proficiencyDescription,
+                knowledgeItems: new Set(),
+                abilityItems: new Set(),
+                tscs: new Map()
+              });
+            }
+            const profEntry = skillEntry.proficiencies.get(prof);
+            tscData.knowledgeItems.forEach(k => profEntry.knowledgeItems.add(k));
+            tscData.abilityItems.forEach(a => profEntry.abilityItems.add(a));
+            profEntry.tscs.set(tscData.code, tscData);
+
+            skillEntry.tscs.set(tscData.code + '|' + tscData.proficiency, tscData);
+
+            if (!allUniqueSkills.has(parentSkillTitle)) {
+              allUniqueSkills.set(parentSkillTitle, {
+                title: parentSkillTitle,
+                description: uniqueSkillByTitle.get(parentSkillTitle)?.['parent_skill_description'] || '',
+                roles: [],
+                proficiencies: new Map()
+              });
+            }
+            const globalSkill = allUniqueSkills.get(parentSkillTitle);
+            const existingRole = globalSkill.roles.find(r => r.key === roleKey);
+            if (!existingRole) {
+              globalSkill.roles.push({
+                key: roleKey,
+                name: role,
+                sector,
+                track,
+                proficiency: prof,
+                proficiencies: new Set([prof])
+              });
+            } else {
+              existingRole.proficiencies.add(prof);
+            }
+            
+            // Also store proficiency data globally
+            if (!globalSkill.proficiencies.has(prof)) {
+              globalSkill.proficiencies.set(prof, {
+                level: prof,
+                proficiencyDescription: tscData.proficiencyDescription,
+                knowledgeItems: new Set(),
+                abilityItems: new Set(),
+                tscs: new Map()
+              });
+            }
+            const globalProfEntry = globalSkill.proficiencies.get(prof);
+            tscData.knowledgeItems.forEach(k => globalProfEntry.knowledgeItems.add(k));
+            tscData.abilityItems.forEach(a => globalProfEntry.abilityItems.add(a));
+            globalProfEntry.tscs.set(tscData.code, tscData);
+          }
+        }
+
+        roleAnalysis.set(roleKey, {
+          role,
+          sector,
+          track,
+          description: roleDesc ? safeStr(roleDesc['Job Role Description']) : '',
+          performance: roleDesc ? safeStr(roleDesc['Performance Expectation']) : '',
+          uniqueSkills: Array.from(uniqueSkillsMap.values()),
+          tscs: tscList
+        });
+      }
+
+      analysisResults = {
+        roles: roleAnalysis,
+        uniqueSkills: allUniqueSkills,
+        totalRoles: roles.length,
+        totalUniqueSkills: allUniqueSkills.size,
+        totalTscs: totalTscCount
+      };
+
+      statRoles.textContent = analysisResults.totalRoles;
+      statUniqueSkills.textContent = analysisResults.totalUniqueSkills;
+      statTsc.textContent = analysisResults.totalTscs;
+
+      emptyState.classList.add('hidden');
+      resultsContainer.classList.remove('hidden');
+
+      // Clear any previous selection
+      clearSkillSelection();
+      closeDetailPanel();
+
+      renderCurrentView();
+    }
+
+    // =========================================================================
+    // VIEW RENDERING
+    // =========================================================================
+    function renderCurrentView() {
+      if (!analysisResults) return;
+
+      // Clear selection when switching views
+      clearSkillSelection();
+      closeDetailPanel();
+
+      // CRITICAL FIX: Properly hide/show view containers
+      roleViewContainer.classList.remove('active');
+      compareContainer.classList.remove('active');
+      skillViewContainer.classList.remove('active');
+
+      switch (currentView) {
+        case 'role':
+          roleViewContainer.classList.add('active');
+          renderRoleView();
+          break;
+        case 'compare':
+          compareContainer.classList.add('active');
+          renderCompareView();
+          break;
+        case 'skill':
+          skillViewContainer.classList.add('active');
+          renderSkillView();
+          break;
+      }
+    }
+
+    function renderRoleView() {
+      roleCards.innerHTML = '';
+
+      for (const [roleKey, data] of analysisResults.roles) {
+        const card = document.createElement('div');
+        card.className = 'role-card fade-in';
+
+        const sortedSkills = data.uniqueSkills.sort((a, b) => {
+          const aMax = Math.max(...Array.from(a.proficiencies.keys()));
+          const bMax = Math.max(...Array.from(b.proficiencies.keys()));
+          return bMax - aMax;
+        });
+
+        // Only show unique skills section, no TSC list in middle panel
+        card.innerHTML = `
+          <div class="role-card-header">
+            <div class="role-card-info">
+              <div class="role-card-title">
+                ${escapeHtml(data.role)}
+                ${data.uniqueSkills.some(s => s.isEmerging) ? '<span class="badge badge-warning">Emerging</span>' : ''}
+              </div>
+              <div class="role-card-meta">${escapeHtml(data.sector)} · ${escapeHtml(data.track)}</div>
+            </div>
+            <div class="role-card-badges">
+              <span class="badge badge-primary">${data.uniqueSkills.length} skills</span>
+              <span class="badge badge-success">${data.tscs.length} TSCs</span>
+            </div>
+            <span class="role-card-toggle">▼</span>
+          </div>
+          <div class="role-card-body">
+            <div class="skills-section">
+              <div class="skills-section-title">
+                <span>💡</span>
+                <span>Unique Skills</span>
+              </div>
+              <div class="skills-grid">
+                ${sortedSkills.map(skill => `
+                  <div class="skill-row" data-skill-title="${escapeHtml(skill.title)}" data-role-key="${escapeHtml(roleKey)}">
+                    <div class="skill-row-icon">${skill.isEmerging ? '🌟' : '📌'}</div>
+                    <div class="skill-row-content">
+                      <div class="skill-row-title">${escapeHtml(skill.title)}</div>
+                      <div class="skill-row-subtitle">${skill.tscs.size} TSC${skill.tscs.size > 1 ? 's' : ''} linked</div>
+                    </div>
+                    <div class="skill-row-badges">
+                      ${Array.from(skill.proficiencies.keys()).sort().map(p => `
+                        <span class="proficiency-badge">${escapeHtml(p)}</span>
+                      `).join('')}
+                    </div>
+                    <span class="skill-row-arrow">→</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+
+        const header = card.querySelector('.role-card-header');
+        header.addEventListener('click', () => {
+          card.classList.toggle('expanded');
+        });
+
+        card.querySelectorAll('.skill-row').forEach(row => {
+          row.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const skillTitle = row.dataset.skillTitle;
+            const rKey = row.dataset.roleKey;
+            
+            // Clear previous selection and set new one
+            clearSkillSelection();
+            row.classList.add('active');
+            currentlySelectedSkillElement = row;
+            currentlySelectedSkillKey = skillTitle + '|' + rKey;
+            
+            showSkillDetail(skillTitle, rKey);
+          });
+        });
+
+        roleCards.appendChild(card);
+      }
+    }
+
+    function renderCompareView() {
+      const compareContent = document.getElementById('compareContent');
+
+      if (analysisResults.totalRoles < 2 || analysisResults.totalRoles > 2) {
+        compareContent.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⚖️</div>
+            <div class="empty-state-title">Select ${analysisResults.totalRoles < 2 ? 'at least' : '<strong>only</strong>'} 2 roles to compare</div>
+            <div class="empty-state-text">
+              The comparison view shows shared and unique skills between job roles.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const roleKeys = Array.from(analysisResults.roles.keys());
+      const role1Key = roleKeys[0];
+      const role2Key = roleKeys[1];
+      const role1 = analysisResults.roles.get(role1Key);
+      const role2 = analysisResults.roles.get(role2Key);
+
+      const skills1 = new Map();
+      const skills2 = new Map();
+      
+      for (const skill of role1.uniqueSkills) {
+        skills1.set(skill.title, skill);
+      }
+      for (const skill of role2.uniqueSkills) {
+        skills2.set(skill.title, skill);
+      }
+
+      const sharedSkills = [];
+      const unique1Skills = [];
+      const unique2Skills = [];
+
+      for (const skill of role1.uniqueSkills) {
+        if (skills2.has(skill.title)) {
+          const skill2 = skills2.get(skill.title);
+          sharedSkills.push({
+            title: skill.title,
+            skill1: skill,
+            skill2: skill2,
+            prof1: Array.from(skill.proficiencies.keys()).sort(),
+            prof2: Array.from(skill2.proficiencies.keys()).sort()
+          });
+        } else {
+          unique1Skills.push(skill);
+        }
+      }
+
+      for (const skill of role2.uniqueSkills) {
+        if (!skills1.has(skill.title)) {
+          unique2Skills.push(skill);
+        }
+      }
+
+      compareContent.innerHTML = `
+        <div class="compare-header">
+          <div class="compare-role-card">
+            <div class="compare-role-name">${escapeHtml(role1.role)}</div>
+            <div class="compare-role-sector">${escapeHtml(role1.sector)} · ${escapeHtml(role1.track)}</div>
+          </div>
+          <div class="compare-role-card">
+            <div class="compare-role-name">${escapeHtml(role2.role)}</div>
+            <div class="compare-role-sector">${escapeHtml(role2.sector)} · ${escapeHtml(role2.track)}</div>
+          </div>
+        </div>
+
+        <div class="compare-section">
+          <div class="compare-section-title">
+            <span>🤝</span>
+            <span>Shared Skills (${sharedSkills.length})</span>
+          </div>
+          <div class="skills-grid" id="sharedSkillsGrid">
+            ${sharedSkills.map(skill => {
+              const profStr1 = skill.prof1.join(', ');
+              const profStr2 = skill.prof2.join(', ');
+              const isDifferent = profStr1 !== profStr2;
+              return `
+                <div class="skill-row compare-skill-row" data-skill-title="${escapeHtml(skill.title)}" data-is-shared="true" data-role1-key="${escapeHtml(role1Key)}" data-role2-key="${escapeHtml(role2Key)}">
+                  <div class="skill-row-icon">📌</div>
+                  <div class="skill-row-content">
+                    <div class="skill-row-title">${escapeHtml(skill.title)}</div>
+                    <div class="skill-row-subtitle">
+                      ${isDifferent ? `
+                        <span class="proficiency-change">Level ${escapeHtml(profStr1)} → ${escapeHtml(profStr2)}</span>
+                      ` : `Level ${escapeHtml(profStr1)}`}
+                    </div>
+                  </div>
+                  <span class="skill-row-arrow">→</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <div class="compare-grid">
+          <div class="compare-column">
+            <div class="compare-column-header">Only in ${escapeHtml(role1.role)} (${unique1Skills.length})</div>
+            ${unique1Skills.map(skill => `
+              <div class="compare-skill-item" data-skill-title="${escapeHtml(skill.title)}" data-role-key="${escapeHtml(role1Key)}">
+                <div class="compare-skill-name">${escapeHtml(skill.title)}</div>
+                <div class="compare-skill-level">Level ${Array.from(skill.proficiencies.keys()).sort().join(', ')}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="compare-divider"></div>
+          <div class="compare-column">
+            <div class="compare-column-header">Only in ${escapeHtml(role2.role)} (${unique2Skills.length})</div>
+            ${unique2Skills.map(skill => `
+              <div class="compare-skill-item" data-skill-title="${escapeHtml(skill.title)}" data-role-key="${escapeHtml(role2Key)}">
+                <div class="compare-skill-name">${escapeHtml(skill.title)}</div>
+                <div class="compare-skill-level">Level ${Array.from(skill.proficiencies.keys()).sort().join(', ')}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // Add click handlers for shared skills
+      compareContent.querySelectorAll('.compare-skill-row').forEach(row => {
+        row.addEventListener('click', () => {
+          clearSkillSelection();
+          row.classList.add('active');
+          currentlySelectedSkillElement = row;
+          
+          const skillTitle = row.dataset.skillTitle;
+          const role1Key = row.dataset.role1Key;
+          const role2Key = row.dataset.role2Key;
+          
+          showCompareSkillDetail(skillTitle, role1Key, role2Key);
+        });
+      });
+
+      // Add click handlers for unique skills
+      compareContent.querySelectorAll('.compare-skill-item').forEach(item => {
+        item.addEventListener('click', () => {
+          clearSkillSelection();
+          item.classList.add('active');
+          currentlySelectedSkillElement = item;
+          
+          const skillTitle = item.dataset.skillTitle;
+          const roleKey = item.dataset.roleKey;
+          showSkillDetail(skillTitle, roleKey);
+        });
+      });
+    }
+
+    function renderSkillView() {
+      const skillResults = document.getElementById('skillResults');
+      const skillSearchInput = document.getElementById('skillSearchInput');
+      const query = skillSearchInput.value.toLowerCase().trim();
+
+      const skills = Array.from(analysisResults.uniqueSkills.values())
+        .filter(s => !query || s.title.toLowerCase().includes(query))
+        .sort((a, b) => b.roles.length - a.roles.length);
+
+      skillResults.innerHTML = skills.map(skill => {
+        // Collect all proficiency levels from all roles
+        const allProficiencies = new Set();
+        skill.roles.forEach(r => {
+          if (r.proficiencies) {
+            r.proficiencies.forEach(p => allProficiencies.add(p));
+          } else if (r.proficiency) {
+            allProficiencies.add(r.proficiency);
+          }
+        });
+        const profLevels = Array.from(allProficiencies).sort();
+        
+        return `
+          <div class="skill-result-card" data-skill-title="${escapeHtml(skill.title)}">
+            <div class="skill-result-header">
+              <div class="skill-result-info">
+                <div class="skill-result-title">${escapeHtml(skill.title)}</div>
+                <div class="skill-result-count">${skill.roles.length} role${skill.roles.length > 1 ? 's' : ''} require this skill</div>
+              </div>
+              <div class="skill-result-actions">
+                <button class="skill-info-btn" data-skill-title="${escapeHtml(skill.title)}" title="View skill details">ℹ</button>
+                <span class="skill-result-expand">▼</span>
+              </div>
+            </div>
+            <div class="skill-result-roles">
+              ${skill.roles.map(role => `
+                <div class="role-link">
+                  <div>
+                    <div class="role-link-name">${escapeHtml(role.name)}</div>
+                    <div class="role-link-sector">${escapeHtml(role.sector)} · ${escapeHtml(role.track)}</div>
+                  </div>
+                  <span class="proficiency-badge">${escapeHtml(role.proficiency || Array.from(role.proficiencies || []).sort().join(', '))}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Toggle expand handlers
+      skillResults.querySelectorAll('.skill-result-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+          // Don't toggle if clicking the info button
+          if (e.target.closest('.skill-info-btn')) return;
+          header.closest('.skill-result-card').classList.toggle('expanded');
+        });
+      });
+
+      // Info button handlers
+      skillResults.querySelectorAll('.skill-info-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          
+          // Clear previous selection
+          skillResults.querySelectorAll('.skill-info-btn.active').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          const skillTitle = btn.dataset.skillTitle;
+          showSkillCentricDetail(skillTitle);
+        });
+      });
+    }
+
+    // =========================================================================
+    // DETAIL PANEL - WITH K&A ITEMS SPLIT BY PROFICIENCY
+    // =========================================================================
+    function showSkillDetail(skillTitle, roleKey) {
+      const roleData = analysisResults.roles.get(roleKey);
+      const skillData = roleData.uniqueSkills.find(s => s.title === skillTitle);
+
+      if (!skillData) return;
+
+      // Get proficiency levels sorted
+      const profLevels = Array.from(skillData.proficiencies.keys()).sort((a, b) => parseInt(a) - parseInt(b));
+
+      detailTitle.textContent = skillTitle;
+      
+      let html = `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-content">${escapeHtml(skillData.description) || 'No description available.'}</div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Skill Info</div>
+          <div class="detail-tags">
+            <span class="badge badge-primary">${escapeHtml(skillData.skillType) || 'N/A'}</span>
+            ${skillData.isEmerging ? '<span class="badge badge-warning">Emerging Skill</span>' : ''}
+            ${skillData.isCasl ? '<span class="badge badge-success">CASL Skill</span>' : ''}
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Proficiency Levels</div>
+          <div class="detail-tags" style="margin-bottom: 0.75rem;">
+            ${profLevels.map(p => `
+              <span class="proficiency-badge">${escapeHtml(p)}</span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // Render each proficiency level separately
+      for (const level of profLevels) {
+        const profData = skillData.proficiencies.get(level);
+        const knowledgeItems = Array.from(profData.knowledgeItems);
+        const abilityItems = Array.from(profData.abilityItems);
+        const relatedTscs = Array.from(profData.tscs.values());
+
+        html += `
+          <div class="proficiency-group">
+            <div class="proficiency-group-header">
+              <div class="proficiency-group-level">${escapeHtml(level)}</div>
+              <div class="proficiency-group-title">Level ${escapeHtml(level)}</div>
+            </div>
+            ${profData.proficiencyDescription ? `
+              <div class="proficiency-group-desc">${escapeHtml(profData.proficiencyDescription)}</div>
+            ` : ''}
+            
+            ${knowledgeItems.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title knowledge">📚 Knowledge (${knowledgeItems.length})</div>
+                <ul class="detail-ka-list">
+                  ${knowledgeItems.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet knowledge"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${abilityItems.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title ability">⚡ Abilities (${abilityItems.length})</div>
+                <ul class="detail-ka-list">
+                  ${abilityItems.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet ability"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            <div class="detail-section" style="margin-top: 0.75rem; margin-bottom: 0;">
+              <div class="detail-section-title" style="font-size: 0.65rem;">Related TSCs (${relatedTscs.length})</div>
+              ${relatedTscs.map(tsc => `
+                <div style="padding: 0.4rem 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.25rem; font-size: 0.7rem;">
+                  <span style="font-family: monospace; background: var(--bg-tertiary); padding: 0.1rem 0.25rem; border-radius: 3px; margin-right: 0.25rem; font-size: 0.6rem;">${escapeHtml(tsc.code)}</span>
+                  <span style="color: var(--text-secondary);">${escapeHtml(tsc.title)}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      detailBody.innerHTML = html;
+      detailPanel.classList.add('open');
+    }
+
+    // Show skill detail for compare view (shared skills)
+    function showCompareSkillDetail(skillTitle, role1Key, role2Key) {
+      const role1Data = analysisResults.roles.get(role1Key);
+      const role2Data = analysisResults.roles.get(role2Key);
+      const skill1 = role1Data.uniqueSkills.find(s => s.title === skillTitle);
+      const skill2 = role2Data.uniqueSkills.find(s => s.title === skillTitle);
+
+      if (!skill1 || !skill2) return;
+
+      // Combine all proficiency levels from both roles
+      const allLevels = new Set();
+      skill1.proficiencies.forEach((v, k) => allLevels.add(parseInt(k)));
+      skill2.proficiencies.forEach((v, k) => allLevels.add(parseInt(k)));
+      
+      // If there's a range (e.g., 2 -> 4), include intermediate levels
+      const minLevel = Math.min(...allLevels);
+      const maxLevel = Math.max(...allLevels);
+      for (let i = minLevel; i <= maxLevel; i++) {
+        allLevels.add(i);
+      }
+      
+      const profLevels = Array.from(allLevels).sort((a, b) => a - b);
+
+      detailTitle.textContent = skillTitle;
+      
+      let html = `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-content">${escapeHtml(skill1.description) || 'No description available.'}</div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Comparison</div>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <div style="flex: 1; padding: 0.5rem; background: var(--accent-soft); border-radius: var(--radius-md); border-left: 3px solid var(--accent-primary);">
+              <div style="font-size: 0.7rem; color: var(--accent-primary); font-weight: 600;">${escapeHtml(role1Data.role)}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">Level ${Array.from(skill1.proficiencies.keys()).sort().join(', ')}</div>
+            </div>
+            <div style="flex: 1; padding: 0.5rem; background: rgba(139, 92, 246, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--accent-secondary);">
+              <div style="font-size: 0.7rem; color: var(--accent-secondary); font-weight: 600;">${escapeHtml(role2Data.role)}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">Level ${Array.from(skill2.proficiencies.keys()).sort().join(', ')}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Proficiency Levels</div>
+          <div class="detail-tags" style="margin-bottom: 0.75rem;">
+            ${profLevels.map(p => `
+              <span class="proficiency-badge">${p}</span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // Render each proficiency level
+      for (const level of profLevels) {
+        const levelStr = String(level);
+        const profData1 = skill1.proficiencies.get(levelStr);
+        const profData2 = skill2.proficiencies.get(levelStr);
+        
+        // Merge knowledge and ability items from both roles
+        const knowledgeItems = new Set();
+        const abilityItems = new Set();
+        const relatedTscs = [];
+        let profDescription = '';
+        
+        if (profData1) {
+          profData1.knowledgeItems.forEach(k => knowledgeItems.add(k));
+          profData1.abilityItems.forEach(a => abilityItems.add(a));
+          profData1.tscs.forEach(t => relatedTscs.push(t)); 
+          if (profData1.proficiencyDescription) profDescription = profData1.proficiencyDescription;
+        }
+        if (profData2) {
+          profData2.knowledgeItems.forEach(k => knowledgeItems.add(k));
+          profData2.abilityItems.forEach(a => abilityItems.add(a));
+          profData2.tscs.forEach(t => {
+            if (!relatedTscs.find(rt => rt.code === t.code)) relatedTscs.push(t);
+          });
+          if (!profDescription && profData2.proficiencyDescription) profDescription = profData2.proficiencyDescription;
+        }
+        
+        // If we don't have data for this level but it's in the range, try to get from K&A map
+        if (!profData1 && !profData2) {
+          // Find any TSC with this proficiency level
+          for (const [key, entry] of kAndAByCodeProf) {
+            if (entry.proficiencyLevel === levelStr) {
+              if (!profDescription && entry.proficiencyDescription) {
+                profDescription = entry.proficiencyDescription;
+              }
+              entry.knowledgeItems.forEach(k => knowledgeItems.add(k));
+              entry.abilityItems.forEach(a => abilityItems.add(a));
+              break;
+            }
+          }
+        }
+
+        const knowledgeArr = Array.from(knowledgeItems);
+        const abilityArr = Array.from(abilityItems);
+
+        html += `
+          <div class="proficiency-group">
+            <div class="proficiency-group-header">
+              <div class="proficiency-group-level">${level}</div>
+              <div class="proficiency-group-title">Level ${level}</div>
+            </div>
+            ${profDescription ? `
+              <div class="proficiency-group-desc">${escapeHtml(profDescription)}</div>
+            ` : ''}
+            
+            ${knowledgeArr.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title knowledge">📚 Knowledge (${knowledgeArr.length})</div>
+                <ul class="detail-ka-list">
+                  ${knowledgeArr.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet knowledge"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${abilityArr.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title ability">⚡ Abilities (${abilityArr.length})</div>
+                <ul class="detail-ka-list">
+                  ${abilityArr.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet ability"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${relatedTscs.length > 0 ? `
+              <div class="detail-section" style="margin-top: 0.75rem; margin-bottom: 0;">
+                <div class="detail-section-title" style="font-size: 0.65rem;">Related TSCs (${relatedTscs.length})</div>
+                ${relatedTscs.map(tsc => `
+                  <div style="padding: 0.4rem 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.25rem; font-size: 0.7rem;">
+                    <span style="font-family: monospace; background: var(--bg-tertiary); padding: 0.1rem 0.25rem; border-radius: 3px; margin-right: 0.25rem; font-size: 0.6rem;">${escapeHtml(tsc.code)}</span>
+                    <span style="color: var(--text-secondary);">${escapeHtml(tsc.title)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      detailBody.innerHTML = html;
+      detailPanel.classList.add('open');
+    }
+
+    // Show skill detail for skill-centric view
+    function showSkillCentricDetail(skillTitle) {
+      const skillData = analysisResults.uniqueSkills.get(skillTitle);
+      if (!skillData) return;
+
+      // Get all proficiency levels from all roles
+      const allLevels = new Set();
+      skillData.roles.forEach(r => {
+        if (r.proficiencies) {
+          r.proficiencies.forEach(p => allLevels.add(parseInt(p)));
+        } else if (r.proficiency) {
+          allLevels.add(parseInt(r.proficiency));
+        }
+      });
+      
+      const profLevels = Array.from(allLevels).sort((a, b) => a - b);
+
+      detailTitle.textContent = skillTitle;
+      
+      let html = `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-content">${escapeHtml(skillData.description) || 'No description available.'}</div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Required by Roles</div>
+          ${skillData.roles.map(role => `
+            <div style="padding: 0.5rem; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 0.375rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.8rem; font-weight: 500; color: var(--text-primary);">${escapeHtml(role.name)}</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(role.sector)} · ${escapeHtml(role.track)}</div>
+              </div>
+              <span class="proficiency-badge">${escapeHtml(role.proficiency || Array.from(role.proficiencies || []).sort().join(', '))}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Proficiency Levels</div>
+          <div class="detail-tags" style="margin-bottom: 0.75rem;">
+            ${profLevels.map(p => `
+              <span class="proficiency-badge">${p}</span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // Render each proficiency level
+      for (const level of profLevels) {
+        const levelStr = String(level);
+        const profData = skillData.proficiencies ? skillData.proficiencies.get(levelStr) : null;
+        
+        const knowledgeItems = profData ? Array.from(profData.knowledgeItems) : [];
+        const abilityItems = profData ? Array.from(profData.abilityItems) : [];
+        const relatedTscs = profData ? Array.from(profData.tscs.values()) : [];
+        const profDescription = profData ? profData.proficiencyDescription : '';
+
+        html += `
+          <div class="proficiency-group">
+            <div class="proficiency-group-header">
+              <div class="proficiency-group-level">${level}</div>
+              <div class="proficiency-group-title">Level ${level}</div>
+            </div>
+            ${profDescription ? `
+              <div class="proficiency-group-desc">${escapeHtml(profDescription)}</div>
+            ` : ''}
+            
+            ${knowledgeItems.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title knowledge">📚 Knowledge (${knowledgeItems.length})</div>
+                <ul class="detail-ka-list">
+                  ${knowledgeItems.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet knowledge"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${abilityItems.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title ability">⚡ Abilities (${abilityItems.length})</div>
+                <ul class="detail-ka-list">
+                  ${abilityItems.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet ability"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${relatedTscs.length > 0 ? `
+              <div class="detail-section" style="margin-top: 0.75rem; margin-bottom: 0;">
+                <div class="detail-section-title" style="font-size: 0.65rem;">Related TSCs (${relatedTscs.length})</div>
+                ${relatedTscs.map(tsc => `
+                  <div style="padding: 0.4rem 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.25rem; font-size: 0.7rem;">
+                    <span style="font-family: monospace; background: var(--bg-tertiary); padding: 0.1rem 0.25rem; border-radius: 3px; margin-right: 0.25rem; font-size: 0.6rem;">${escapeHtml(tsc.code)}</span>
+                    <span style="color: var(--text-secondary);">${escapeHtml(tsc.title)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      detailBody.innerHTML = html;
+      detailPanel.classList.add('open');
+    }
+
+    function closeDetailPanel() {
+      detailPanel.classList.remove('open');
+      clearSkillSelection();
+    }
+
+    // =========================================================================
+    // EVENT LISTENERS
+    // =========================================================================
+    
+    // File section toggle
+    fileSectionHeader.addEventListener('click', () => {
+      fileSectionContainer.classList.toggle('expanded');
+    });
+
+    // File upload
+    fileUploadZone.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fileInput.click();
+    });
+    fileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files || [])));
+
+    fileUploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      fileUploadZone.classList.add('drag-over');
+    });
+
+    fileUploadZone.addEventListener('dragleave', () => {
+      fileUploadZone.classList.remove('drag-over');
+    });
+
+    fileUploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      fileUploadZone.classList.remove('drag-over');
+      handleFiles(Array.from(e.dataTransfer.files));
+    });
+
+    function resetDragState() {
+      dragCounter = 0;
+      dropOverlay.classList.remove('active');
+    }
+
+    // Full-page drag and drop
+    document.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      if (e.dataTransfer.types.includes('Files')) {
+        dropOverlay.classList.add('active');
+        // Expand file section to show upload zone
+        fileSectionContainer.classList.add('expanded');
+      }
+    });
+
+    document.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+  
+      // Check if we've left all elements OR left the document entirely
+      if (dragCounter <= 0 || e.relatedTarget === null) {
+        resetDragState();
+      }
+    });
+
+    document.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      dropOverlay.classList.remove('active');
+      handleFiles(Array.from(e.dataTransfer.files));
+    });
+
+    // Handle drag cancelled (e.g., pressing Escape)
+    document.addEventListener('dragend', (e) => {
+      resetDragState();
+    });
+
+    // Handle tab switches or window minimizing
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        resetDragState();
+      }
+    });
+
+    // Filtering
+    roleSearchInput.addEventListener('input', applyFilters);
+    sectorFilter.addEventListener('change', applyFilters);
+
+    // Selection
+    selectionExpandBtn.addEventListener('click', toggleChipsExpanded);
+    clearSelectionBtn.addEventListener('click', clearAllSelections);
+    analyzeBtn.addEventListener('click', runAnalysis);
+
+    // View toggles
+    viewRoleBtn.addEventListener('click', () => {
+      currentView = 'role';
+      viewRoleBtn.classList.add('active');
+      viewCompareBtn.classList.remove('active');
+      viewSkillBtn.classList.remove('active');
+      renderCurrentView();
+    });
+
+    viewCompareBtn.addEventListener('click', () => {
+      currentView = 'compare';
+      viewRoleBtn.classList.remove('active');
+      viewCompareBtn.classList.add('active');
+      viewSkillBtn.classList.remove('active');
+      renderCurrentView();
+    });
+
+    viewSkillBtn.addEventListener('click', () => {
+      currentView = 'skill';
+      viewRoleBtn.classList.remove('active');
+      viewCompareBtn.classList.remove('active');
+      viewSkillBtn.classList.add('active');
+      renderCurrentView();
+    });
+
+    // Skill search
+    document.getElementById('skillSearchInput').addEventListener('input', () => {
+      if (currentView === 'skill') {
+        renderSkillView();
+      }
+    });
+
+    // Detail panel
+    detailCloseBtn.addEventListener('click', closeDetailPanel);
+
+    // Initialize
+    (async function init() {
+      // Try to load preloaded data
+      const hasPreloadedData = await loadPreloadedData();
+      
+      if (!hasPreloadedData) {
+        // Expand file section if no preloaded data
+        fileSectionContainer.classList.add('expanded');
+      } else {
+        // Collapse file section since data is loaded
+        fileSectionContainer.classList.remove('expanded');
+      }
+    })();
+  </script>
+</body>
+</html>
