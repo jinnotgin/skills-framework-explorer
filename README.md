@@ -1,23 +1,38 @@
 # Skills Framework Explorer
 
-Interactive, client-only viewer for the SkillsFuture Skills Framework. Load the three official XLSX exports (or the bundled JSON) and explore role requirements, compare roles side by side, or browse skills with knowledge/ability breakdowns and TSC links.
+Discover what it takes to grow your career. This free tool helps you explore Singapore's official SkillsFuture Skills Framework — making it easy to understand job roles, compare career paths, and identify the skills you need to succeed.
 
-- Live site: https://jinnotgin.github.io/skills-framework-explorer/
-- Tech: vanilla HTML/JS/CSS, no build step or dependencies.
+**[Try it now →]: https://jinnotgin.github.io/skills-framework-explorer/ **
 
-## Preloaded dataset
-- The app already ships with the latest bundle (as of Q3 2025): 
-  - Skills Framework Dataset (Q3 2025)
-  - Unique Skills List (Sep 2025), and 
-  - TSC to Unique Skills Mapping File (Sep 2025).
-- You can still swap in your own files at any time via drag-and-drop (see below).
+## What You Can Do
 
-## Using your own data
-- Drag-and-drop the three SkillsFuture XLSX workbooks from https://jobsandskills.skillsfuture.gov.sg/frameworks/skills-frameworks onto the page:
-  - Skills Framework Dataset workbook with sheets `Job Role_Description`, `Job Role_TCS_CCS`, `TSC_CCS_K&A`
-  - TSC to Unique Skills Mapping File workbook with sheet `TSC to Unique Skill Mapping`
-  - Unique Skills List workbook with sheet `Unique Skills List`
-- Once loaded, select job roles from the sidebar and click **Analyze Skills** to view role-centric, compare, or skill-centric outputs. Use search/sector filters and click any skill to open the detail panel.
+### Understand Any Role at a Glance
+See what skills, knowledge, and abilities are needed for any job role across different sectors — from entry-level to senior positions.
 
-## Notes
-- All processing happens in the browser; nothing is uploaded to a server.
+### Compare Career Paths Side by Side
+Thinking about a career switch? Compare roles to see where your current skills transfer and what gaps you might need to fill.
+
+### Explore Skills Across Industries
+Curious where a particular skill is valued? Browse skills and discover which roles and sectors need them most.
+
+## Why Use This?
+
+- **Plan your next move** — Know exactly what to learn to qualify for the role you want.
+- **Make informed decisions** — Compare options before committing to a career path.
+- **Spot transferable skills** — See how your experience applies to new opportunities.
+- **Stay current** — Uses the latest official SkillsFuture data (Q3 2025).
+
+## Your Data, Your Privacy
+
+Everything happens right in your browser. Nothing is uploaded or stored anywhere — your exploration stays private.
+
+## Keep It Updated
+
+The tool comes pre-loaded with the latest SkillsFuture data, but you can also drag and drop newer official files from the [SkillsFuture - Skills Framework portal](https://jobsandskills.skillsfuture.gov.sg/frameworks/skills-frameworks) anytime to stay up to date:
+- Skills Framework Dataset workbook, with sheets `Job Role_Description`, `Job Role_TCS_CCS`, `TSC_CCS_K&A`
+- TSC to Unique Skills Mapping File workbook, with sheet `TSC to Unique Skill Mapping`
+- Unique Skills List workbook,with sheet `Unique Skills List`
+
+---
+
+*Built to make career planning simpler and more accessible for everyone.*
