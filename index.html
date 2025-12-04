@@ -3956,7 +3956,7 @@
               ? skill.prof2.map(l => `<span class="compare-level-circle role2 ${highlight2 && l === max2 ? 'highlight' : ''}">${escapeHtml(l)}</span>`).join('')
               : `<span class="compare-level-circle">–</span>`;
             return `
-              <div class="compare-row" data-skill-title="${escapeHtml(skill.title)}" data-role1-key="${skill.skill1 ? escapeHtml(role1Key) : ''}" data-role2-key="${skill.skill2 ? escapeHtml(role2Key) : ''}">
+              <div class="compare-row" data-skill-title="${escapeHtml(skill.title)}" data-role1-key="${escapeHtml(role1Key)}" data-role2-key="${escapeHtml(role2Key)}">
                 <div class="compare-skill">
                   <div class="compare-skill-name">${escapeHtml(skill.title)}</div>
                 </div>
@@ -3985,13 +3985,7 @@
           const r1 = row.dataset.role1Key;
           const r2 = row.dataset.role2Key;
 
-          if (r1 && r2) {
-            showCompareSkillDetail(skillTitle, r1, r2);
-          } else if (r1) {
-            showSkillDetail(skillTitle, r1);
-          } else if (r2) {
-            showSkillDetail(skillTitle, r2);
-          }
+          showCompareSkillDetail(skillTitle, r1, r2);
         });
       });
 
@@ -4196,35 +4190,45 @@
       openDetailPanel();
     }
 
-    // Show skill detail for compare view (shared skills)
+    // Show skill detail for compare view (handles missing proficiencies)
     function showCompareSkillDetail(skillTitle, role1Key, role2Key) {
       const role1Data = analysisResults.roles.get(role1Key);
       const role2Data = analysisResults.roles.get(role2Key);
-      const skill1 = role1Data.uniqueSkills.find(s => s.title === skillTitle);
-      const skill2 = role2Data.uniqueSkills.find(s => s.title === skillTitle);
+      if (!role1Data || !role2Data) return;
 
-      if (!skill1 || !skill2) return;
+      const skill1 = role1Data.uniqueSkills.find(s => s.title === skillTitle) || null;
+      const skill2 = role2Data.uniqueSkills.find(s => s.title === skillTitle) || null;
 
-      // Combine all proficiency levels from both roles
+      if (!skill1 && !skill2) return;
+
       const allLevels = new Set();
-      skill1.proficiencies.forEach((v, k) => allLevels.add(parseInt(k)));
-      skill2.proficiencies.forEach((v, k) => allLevels.add(parseInt(k)));
-      
-      // If there's a range (e.g., 2 -> 4), include intermediate levels
-      const minLevel = Math.min(...allLevels);
-      const maxLevel = Math.max(...allLevels);
-      for (let i = minLevel; i <= maxLevel; i++) {
-        allLevels.add(i);
+      if (skill1) {
+        skill1.proficiencies.forEach((_, k) => allLevels.add(parseInt(k)));
       }
-      
+      if (skill2) {
+        skill2.proficiencies.forEach((_, k) => allLevels.add(parseInt(k)));
+      }
+
+      if (allLevels.size) {
+        const minLevel = Math.min(...allLevels);
+        const maxLevel = Math.max(...allLevels);
+        for (let i = minLevel; i <= maxLevel; i++) {
+          allLevels.add(i);
+        }
+      }
+
       const profLevels = Array.from(allLevels).sort((a, b) => a - b);
 
       detailTitle.textContent = skillTitle;
-      
+
+      const role1Levels = skill1 ? Array.from(skill1.proficiencies.keys()).sort().join(', ') : '—';
+      const role2Levels = skill2 ? Array.from(skill2.proficiencies.keys()).sort().join(', ') : '—';
+      const description = skill1?.description || skill2?.description || 'No description available.';
+
       let html = `
         <div class="detail-section">
           <div class="detail-section-title">Description</div>
-          <div class="detail-content">${escapeHtml(skill1.description) || 'No description available.'}</div>
+          <div class="detail-content">${escapeHtml(description)}</div>
         </div>
 
         <div class="detail-section">
@@ -4232,11 +4236,11 @@
           <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 120px; padding: 0.5rem; background: var(--accent-soft); border-radius: var(--radius-md); border-left: 3px solid var(--accent-primary);">
               <div style="font-size: 0.7rem; color: var(--accent-primary); font-weight: 600;">${escapeHtml(role1Data.role)}</div>
-              <div style="font-size: 0.75rem; color: var(--text-secondary);">Level ${Array.from(skill1.proficiencies.keys()).sort().join(', ')}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">${skill1 ? `Level ${escapeHtml(role1Levels)}` : 'NA'}</div>
             </div>
             <div style="flex: 1; min-width: 120px; padding: 0.5rem; background: rgba(139, 92, 246, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--accent-secondary);">
               <div style="font-size: 0.7rem; color: var(--accent-secondary); font-weight: 600;">${escapeHtml(role2Data.role)}</div>
-              <div style="font-size: 0.75rem; color: var(--text-secondary);">Level ${Array.from(skill2.proficiencies.keys()).sort().join(', ')}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">${skill2 ? `Level ${escapeHtml(role2Levels)}` : 'NA'}</div>
             </div>
           </div>
         </div>
@@ -4244,22 +4248,20 @@
           <div class="detail-section-title">Proficiency Levels</div>
       `;
 
-      // Render each proficiency level
       for (const level of profLevels) {
         const levelStr = String(level);
-        const profData1 = skill1.proficiencies.get(levelStr);
-        const profData2 = skill2.proficiencies.get(levelStr);
-        
-        // Merge knowledge and ability items from both roles
+        const profData1 = skill1 ? skill1.proficiencies.get(levelStr) : null;
+        const profData2 = skill2 ? skill2.proficiencies.get(levelStr) : null;
+
         const knowledgeItems = new Set();
         const abilityItems = new Set();
         const relatedTscs = [];
         let profDescription = '';
-        
+
         if (profData1) {
           profData1.knowledgeItems.forEach(k => knowledgeItems.add(k));
           profData1.abilityItems.forEach(a => abilityItems.add(a));
-          profData1.tscs.forEach(t => relatedTscs.push(t)); 
+          profData1.tscs.forEach(t => relatedTscs.push(t));
           if (profData1.proficiencyDescription) profDescription = profData1.proficiencyDescription;
         }
         if (profData2) {
@@ -4270,11 +4272,9 @@
           });
           if (!profDescription && profData2.proficiencyDescription) profDescription = profData2.proficiencyDescription;
         }
-        
-        // If we don't have data for this level but it's in the range, try to get from K&A map
+
         if (!profData1 && !profData2) {
-          // Find any TSC with this proficiency level
-          for (const [key, entry] of kAndAByCodeProf) {
+          for (const [, entry] of kAndAByCodeProf) {
             if (entry.proficiencyLevel === levelStr) {
               if (!profDescription && entry.proficiencyDescription) {
                 profDescription = entry.proficiencyDescription;
@@ -4298,7 +4298,7 @@
             ${profDescription ? `
               <div class="proficiency-group-desc">${escapeHtml(profDescription)}</div>
             ` : ''}
-            
+
             ${knowledgeArr.length > 0 ? `
               <div class="detail-ka-section">
                 <div class="detail-ka-title knowledge">📚 Knowledge (${knowledgeArr.length})</div>
