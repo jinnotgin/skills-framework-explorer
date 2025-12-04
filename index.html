@@ -2224,7 +2224,7 @@
         min-width: 0;
       }
 
-      .compare-pill span:not(.dot) {
+      .compare-pill .role-name {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -3902,12 +3902,12 @@
             <div style="font-weight: 700; color: var(--text-primary);">Comparing</div>
             <div class="compare-pill role1">
               <span class="dot"></span>
-              <span>${escapeHtml(role1Label)}</span>
+              <span class="role-name>${escapeHtml(role1Label)}</span>
             </div>
             <span style="font-weight: 600; color: var(--text-muted);">vs</span>
             <div class="compare-pill role2">
               <span class="dot"></span>
-              <span>${escapeHtml(role2Label)}</span>
+              <span class="role-name">${escapeHtml(role2Label)}</span>
             </div>
           </div>
         </div>
