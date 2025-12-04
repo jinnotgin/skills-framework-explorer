@@ -1,6 +1,6 @@
 # Skills Framework Explorer
 
-Discover what it takes to grow your career. This free tool helps you explore Singapore's official SkillsFuture Skills Framework — making it easy to understand job roles, compare career paths, and identify the skills you need to succeed.
+Discover what it takes to grow your career. This free tool helps you explore Singapore's official SkillsFuture Skills Framework, making it easy to understand job roles, compare career paths, and identify the skills you need to succeed.
 
 **[Try it now →]:** https://jinnotgin.github.io/skills-framework-explorer/
 
