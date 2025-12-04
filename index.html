@@ -1487,7 +1487,7 @@
       border: 1px solid var(--border-light);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
-      max-height: calc(100vh - 212px);
+      max-height: calc(100vh - 220px);
       overflow-y: auto;
       overflow-x: hidden;
     }
@@ -2217,6 +2217,17 @@
 
       .compare-role-name {
         font-size: 0.85rem;
+      }
+
+      .compare-pill {
+        max-width: 35vw;
+        min-width: 0;
+      }
+
+      .compare-pill span:not(.dot) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .compare-table-head {
