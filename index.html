@@ -1679,6 +1679,14 @@
       outline-offset: 1px;
     }
 
+    .compare-levels-row {
+      display: contents;
+    }
+
+    .compare-level-vs {
+      display: none;
+    }
+
     /* ===== SKILL-CENTRIC VIEW ===== */
     .skill-search-section {
       margin-bottom: 1rem;
@@ -2186,14 +2194,15 @@
       /* Compare view mobile */
       .compare-header {
         position: sticky;
-        top: 0;
-        z-index: 12;
+        top: -0.875rem;
+        z-index: 20;
         flex-direction: column;
         gap: 0.5rem;
-        padding: 0.75rem 0.75rem 0.5rem;
-        margin: -0.25rem -0.25rem 0.5rem;
+        padding: 0.875rem;
+        margin: -0.875rem -0.875rem 0.75rem;
         background: var(--bg-primary);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.06);
+        border-bottom: 1px solid var(--border-light);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       }
 
       .compare-meta {
@@ -2223,14 +2232,16 @@
       }
 
       .compare-row {
-        grid-template-columns: 1fr auto auto;
-        gap: 0.65rem;
-        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        align-items: stretch;
         border: 1px solid var(--border-light);
         border-radius: var(--radius-lg);
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.625rem;
         box-shadow: var(--shadow-sm);
         background: var(--bg-secondary);
+        padding: 0;
       }
 
       .compare-row:last-child {
@@ -2238,18 +2249,48 @@
       }
 
       .compare-skill {
-        padding-bottom: 0.1rem;
+        flex: 1 1 100%;
+        padding: 0.75rem 0.875rem 0.625rem;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .compare-levels-row {
+        display: flex;
+        flex: 1 1 100%;
+        align-items: stretch;
       }
 
       .compare-level {
-        justify-content: flex-end;
-        gap: 0.4rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        flex-wrap: nowrap;
+        justify-content: center;
+        padding: 0.625rem 0.5rem;
+        gap: 0.25rem;
+      }
+
+      .compare-level:first-of-type {
+        border-bottom-left-radius: calc(var(--radius-lg) - 1px);
+      }
+
+      .compare-level:last-of-type {
+        border-bottom-right-radius: calc(var(--radius-lg) - 1px);
+      }
+
+      .compare-level-vs {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 0.5rem;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: var(--text-muted);
       }
 
       .compare-levels {
         gap: 0.25rem;
+        justify-content: center;
       }
 
       .compare-level-label {
@@ -3887,19 +3928,14 @@
                 <div class="compare-skill">
                   <div class="compare-skill-name">${escapeHtml(skill.title)}</div>
                 </div>
-                <div class="compare-level">
-                  <div class="compare-level-label role1">
-                    <span class="dot"></span>
-                    <span>${escapeHtml(role1Label)}</span>
+                <div class="compare-levels-row">
+                  <div class="compare-level">
+                    <div class="compare-levels ${skill.skill1 ? '' : 'empty'}">${levelChips1}</div>
                   </div>
-                  <div class="compare-levels ${skill.skill1 ? '' : 'empty'}">${levelChips1}</div>
-                </div>
-                <div class="compare-level">
-                  <div class="compare-level-label role2">
-                    <span class="dot"></span>
-                    <span>${escapeHtml(role2Label)}</span>
+                  <div class="compare-level-vs">vs</div>
+                  <div class="compare-level">
+                    <div class="compare-levels ${skill.skill2 ? '' : 'empty'}">${levelChips2}</div>
                   </div>
-                  <div class="compare-levels ${skill.skill2 ? '' : 'empty'}">${levelChips2}</div>
                 </div>
               </div>
             `;
