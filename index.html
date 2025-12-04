@@ -65,6 +65,7 @@
       --breakpoint-md: 768px;
       --breakpoint-lg: 1024px;
       --breakpoint-xl: 1280px;
+      --small-mobile-width: 380px;
     }
 
     * {
@@ -1963,7 +1964,7 @@
         top: 0;
         left: 0;
         width: 85vw;
-        max-width: 320px;
+        max-width: var(--small-mobile-width);
         height: 100vh;
         height: 100dvh;
         max-height: 100dvh;
@@ -2445,8 +2446,8 @@
       }
     }
 
-    /* Small mobile (iPhone SE, etc.) */
-    @media (max-width: 375px) {
+    /* Small mobile */
+    @media (max-width: var(--small-mobile-width)) {
       .sidebar {
         width: 100vw;
         max-width: none;
@@ -2473,7 +2474,7 @@
     @media (max-width: 768px) and (orientation: landscape) {
       .sidebar {
         width: 50vw;
-        max-width: 320px;
+        max-width: var(--small-mobile-width);
       }
 
       .detail-panel.open {
