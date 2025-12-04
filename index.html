@@ -1486,8 +1486,10 @@
       background: var(--bg-secondary);
       border: 1px solid var(--border-light);
       border-radius: var(--radius-lg);
-      overflow: hidden;
       box-shadow: var(--shadow-sm);
+      max-height: calc(100vh - 212px);
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     .compare-filter {
@@ -1616,6 +1618,33 @@
       align-items: center;
       gap: 0.35rem;
       flex-wrap: wrap;
+    }
+
+    .compare-level-label {
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .compare-level-label .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: var(--radius-full);
+      background: var(--border-medium);
+    }
+
+    .compare-level-label.role1 .dot {
+      background: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .compare-level-label.role2 .dot {
+      background: var(--accent-secondary);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
     }
 
     .compare-levels.empty .compare-level-circle {
@@ -1886,7 +1915,7 @@
        ============================================ */
 
     /* Tablet and below */
-    @media (max-width: 1024px) {
+    /* @media (max-width: 1024px) {
       .detail-panel.open {
         position: fixed;
         right: 0;
@@ -1895,10 +1924,10 @@
         z-index: 50;
         box-shadow: var(--shadow-xl);
       }
-    }
+    } */
 
-    /* Mobile styles */
-    @media (max-width: 768px) {
+    /* Tablet and below */
+    @media (max-width: 1024px) {
       :root {
         --header-height: 52px;
       }
@@ -1906,10 +1935,6 @@
       /* Header mobile adjustments */
       .header {
         padding: 0 0.75rem;
-      }
-
-      .logo-text {
-        display: none;
       }
 
       .header-status {
@@ -2048,6 +2073,10 @@
         height: 36px;
       }
 
+      .compare-table {
+        max-height: calc(100vh - 292px - var(--bottom-nav-height));
+      }
+
       /* Larger touch targets */
       .role-item {
         padding: 0.75rem;
@@ -2172,14 +2201,50 @@
         display: none;
       }
 
+      .compare-table {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+        max-height: none;
+      }
+
       .compare-row {
         grid-template-columns: 1fr;
-        gap: 0.5rem;
+        gap: 0.65rem;
         align-items: flex-start;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        margin-bottom: 0.75rem;
+        box-shadow: var(--shadow-sm);
+        background: var(--bg-secondary);
+      }
+
+      .compare-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .compare-skill {
+        padding-bottom: 0.1rem;
       }
 
       .compare-level {
-        justify-content: space-between;
+        justify-content: flex-start;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .compare-levels {
+        gap: 0.25rem;
+      }
+
+      .compare-level-label {
+        display: inline-flex;
+      }
+
+      .compare-level-circle {
+        width: 26px;
+        height: 26px;
       }
 
       /* Selection tray mobile - shows above bottom nav */
@@ -2498,7 +2563,7 @@
 
       <!-- RESULTS CONTAINER -->
       <div class="results-container hidden" id="resultsContainer">
-        <div class="content-header">
+        <div class="content-header" id="contentHeader">
           <div class="content-heading">
             <div class="content-title">Skills Analysis</div>
             <div class="content-subtitle" id="resultsSubtitle">Viewing skills for selected roles</div>
@@ -2759,6 +2824,7 @@
     const emptyStateTitle = document.getElementById('emptyStateTitle');
     const emptyStateText = document.getElementById('emptyStateText');
     const emptyStateSteps = document.getElementById('emptyStateSteps');
+    const contentHeader = document.getElementById('contentHeader');
     const resultsContainer = document.getElementById('resultsContainer');
     const contentBody = document.getElementById('contentBody');
     const roleViewContainer = document.getElementById('roleViewContainer');
@@ -3542,6 +3608,15 @@
       viewCompareBtn.classList.remove('active');
       viewSkillBtn.classList.remove('active');
 
+      // Hide the analysis header in compare view
+      if (contentHeader) {
+        if (currentView === 'compare') {
+          contentHeader.classList.add('hidden');
+        } else {
+          contentHeader.classList.remove('hidden');
+        }
+      }
+
       switch (currentView) {
         case 'role':
           roleViewContainer.classList.add('active');
@@ -3795,9 +3870,17 @@
                   <div class="compare-skill-name">${escapeHtml(skill.title)}</div>
                 </div>
                 <div class="compare-level">
+                  <div class="compare-level-label role1">
+                    <span class="dot"></span>
+                    <span>${escapeHtml(role1Label)}</span>
+                  </div>
                   <div class="compare-levels ${skill.skill1 ? '' : 'empty'}">${levelChips1}</div>
                 </div>
                 <div class="compare-level">
+                  <div class="compare-level-label role2">
+                    <span class="dot"></span>
+                    <span>${escapeHtml(role2Label)}</span>
+                  </div>
                   <div class="compare-levels ${skill.skill2 ? '' : 'empty'}">${levelChips2}</div>
                 </div>
               </div>
