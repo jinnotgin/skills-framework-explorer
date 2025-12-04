@@ -1805,6 +1805,11 @@
       background: var(--accent-soft);
     }
 
+    .role-link.active {
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 1px var(--accent-primary);
+    }
+
     .role-link:last-child {
       margin-bottom: 0;
     }
@@ -4032,7 +4037,7 @@
             </div>
             <div class="skill-result-roles">
               ${skill.roles.map(role => `
-                <div class="role-link">
+                <div class="role-link" data-role-key="${escapeHtml(role.key || '')}">
                   <div>
                     <div class="role-link-name">${escapeHtml(role.name)}</div>
                     <div class="role-link-sector">${escapeHtml(role.sector)} · ${escapeHtml(role.track)}</div>
@@ -4061,10 +4066,29 @@
           
           // Clear previous selection
           skillResults.querySelectorAll('.skill-info-btn.active').forEach(b => b.classList.remove('active'));
+          skillResults.querySelectorAll('.role-link.active').forEach(link => link.classList.remove('active'));
           btn.classList.add('active');
           
           const skillTitle = btn.dataset.skillTitle;
           showSkillCentricDetail(skillTitle);
+        });
+      });
+
+      // Role link handlers (open detail focused on that role)
+      skillResults.querySelectorAll('.role-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const card = link.closest('.skill-result-card');
+          if (!card) return;
+
+          // Clear other selections
+          skillResults.querySelectorAll('.skill-info-btn.active').forEach(b => b.classList.remove('active'));
+          skillResults.querySelectorAll('.role-link.active').forEach(l => l.classList.remove('active'));
+          link.classList.add('active');
+
+          const skillTitle = card.dataset.skillTitle;
+          const roleKey = link.dataset.roleKey || null;
+          showSkillCentricDetail(skillTitle, roleKey);
         });
       });
     }
@@ -4349,13 +4373,23 @@
     }
 
     // Show skill detail for skill-centric view
-    function showSkillCentricDetail(skillTitle) {
+    function showSkillCentricDetail(skillTitle, focusedRoleKey = null) {
       const skillData = analysisResults.uniqueSkills.get(skillTitle);
       if (!skillData) return;
 
-      // Get all proficiency levels from all roles
+      const allRoles = skillData.roles || [];
+      let rolesToShow = allRoles;
+
+      if (focusedRoleKey) {
+        rolesToShow = allRoles.filter(r => r.key === focusedRoleKey);
+        if (!rolesToShow.length) {
+          rolesToShow = allRoles;
+        }
+      }
+
+      // Get all proficiency levels from the scoped roles (default: all roles)
       const allLevels = new Set();
-      skillData.roles.forEach(r => {
+      rolesToShow.forEach(r => {
         if (r.proficiencies) {
           r.proficiencies.forEach(p => allLevels.add(parseInt(p)));
         } else if (r.proficiency) {
@@ -4375,7 +4409,7 @@
 
         <div class="detail-section">
           <div class="detail-section-title">Required by Roles</div>
-          ${skillData.roles.map(role => `
+          ${rolesToShow.map(role => `
             <div style="padding: 0.5rem; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 0.375rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
               <div style="min-width: 0;">
                 <div style="font-size: 0.8rem; font-weight: 500; color: var(--text-primary);">${escapeHtml(role.name)}</div>
