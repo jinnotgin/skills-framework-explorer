@@ -501,12 +501,95 @@
       font-size: 0.65rem;
     }
 
+    .sector-header-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      position: relative;
+    }
+
+    .sector-select-all {
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--border-light);
+      background: var(--bg-secondary);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sector-select-all svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--text-secondary);
+      fill: none;
+      transition: var(--transition-fast);
+    }
+
+    .sector-select-all.filled svg {
+      stroke: var(--accent-primary);
+    }
+
+    .sector-select-all:hover:not(:disabled) {
+      border-color: var(--accent-primary);
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .sector-header:hover .sector-select-all,
+    .sector-header:focus-within .sector-select-all {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sector-select-all.always-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sector-select-all:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .sector-select-all::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text-primary);
+      color: var(--text-inverse);
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.65rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+      z-index: 2;
+    }
+
+    .sector-select-all:hover::after,
+    .sector-select-all:focus-visible::after {
+      opacity: 1;
+    }
+
     .sector-header.expanded .chevron {
       transform: rotate(90deg);
     }
 
     .sector-header .count {
-      margin-left: auto;
+      margin-left: 0.25rem;
       background: var(--bg-hover);
       padding: 0.1rem 0.4rem;
       border-radius: var(--radius-full);
@@ -3295,6 +3378,30 @@
       }
     }
 
+    const selectAllIcons = {
+      empty: `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="4" y="4" width="16" height="16" rx="3" ry="3" stroke-width="2"></rect>
+          <path d="M8 11h8M8 15h5" stroke-width="2" stroke-linecap="round"></path>
+        </svg>
+      `,
+      filled: `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="4" y="4" width="16" height="16" rx="3" ry="3" stroke-width="2"></rect>
+          <path d="M8 12.5l3.2 3.1 4.8-7.2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      `
+    };
+
+    function setSelectAllIcon(btn, state, tooltipText) {
+      btn.classList.toggle('filled', state === 'filled');
+      btn.innerHTML = selectAllIcons[state] || selectAllIcons.empty;
+      const tooltip = tooltipText || (state === 'filled' ? 'Deselect all roles' : 'Select all roles');
+      btn.title = tooltip;
+      btn.setAttribute('aria-label', tooltip);
+      btn.dataset.tooltip = tooltip;
+    }
+
     // =========================================================================
     // ROLE LIST POPULATION
     // =========================================================================
@@ -3344,7 +3451,10 @@
         headerEl.innerHTML = `
           <span class="chevron">▶</span>
           <span class="sector-name">${escapeHtml(sector)}</span>
-          <span class="count">${roles.length}</span>
+          <div class="sector-header-actions">
+            <button class="sector-select-all" type="button" aria-label="Select all roles" title="Select all roles"></button>
+            <span class="count">${roles.length}</span>
+          </div>
         `;
         headerEl.addEventListener('click', () => {
           groupEl.classList.toggle('expanded');
@@ -3377,10 +3487,19 @@
           rolesEl.appendChild(roleEl);
         }
 
+        const selectAllBtn = headerEl.querySelector('.sector-select-all');
+        setSelectAllIcon(selectAllBtn, 'empty');
+        selectAllBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectVisibleRolesInGroup(groupEl);
+        });
+
         groupEl.appendChild(headerEl);
         groupEl.appendChild(rolesEl);
         roleList.appendChild(groupEl);
       }
+
+      updateSectorSelectAllButtons();
     }
 
     function toggleRoleSelection(roleKey, roleEl) {
@@ -3433,6 +3552,8 @@
         });
         selectedChips.appendChild(chip);
       }
+
+      updateSectorSelectAllButtons();
     }
 
     function removeRoleSelection(key) {
@@ -3454,6 +3575,52 @@
       chipsExpanded = !chipsExpanded;
       selectedRolesExpandable.classList.toggle('expanded', chipsExpanded);
       selectionExpandBtn.textContent = chipsExpanded ? 'Hide ▼' : 'View ▲';
+    }
+
+    function selectVisibleRolesInGroup(groupEl) {
+      const roleEls = Array.from(groupEl.querySelectorAll('.role-item')).filter(el => !el.classList.contains('hidden'));
+      if (!roleEls.length) return;
+
+      const allVisibleSelected = roleEls.every(el => selectedRoleKeys.has(el.dataset.roleKey));
+      const shouldSelect = !allVisibleSelected;
+
+      for (const roleEl of roleEls) {
+        const key = roleEl.dataset.roleKey;
+        if (shouldSelect) {
+          selectedRoleKeys.add(key);
+          roleEl.classList.add('selected');
+        } else {
+          selectedRoleKeys.delete(key);
+          roleEl.classList.remove('selected');
+        }
+      }
+
+      updateSelectionTray();
+    }
+
+    function updateSectorSelectAllButtons() {
+      document.querySelectorAll('.sector-group').forEach(groupEl => {
+        const btn = groupEl.querySelector('.sector-select-all');
+        if (!btn) return;
+
+        const visibleRoles = Array.from(groupEl.querySelectorAll('.role-item')).filter(roleEl => !roleEl.classList.contains('hidden'));
+        if (!visibleRoles.length) {
+          setSelectAllIcon(btn, 'empty', 'Select all roles');
+          btn.disabled = true;
+          btn.classList.remove('always-visible');
+          return;
+        }
+
+        btn.disabled = false;
+        const allVisibleSelected = visibleRoles.every(roleEl => selectedRoleKeys.has(roleEl.dataset.roleKey));
+        if (allVisibleSelected) {
+          setSelectAllIcon(btn, 'filled', 'Deselect all roles');
+          btn.classList.add('always-visible');
+        } else {
+          setSelectAllIcon(btn, 'empty', 'Select all roles');
+          btn.classList.remove('always-visible');
+        }
+      });
     }
 
     // =========================================================================
@@ -3496,6 +3663,8 @@
           groupEl.classList.add('hidden');
         }
       });
+
+      updateSectorSelectAllButtons();
     }
 
     // =========================================================================
