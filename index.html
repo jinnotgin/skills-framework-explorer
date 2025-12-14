@@ -3912,11 +3912,9 @@
         const card = document.createElement('div');
         card.className = 'role-card fade-in';
 
-        const sortedSkills = data.uniqueSkills.sort((a, b) => {
-          const aMax = Math.max(...Array.from(a.proficiencies.keys()));
-          const bMax = Math.max(...Array.from(b.proficiencies.keys()));
-          return bMax - aMax;
-        });
+        const sortedSkills = data.uniqueSkills
+          .slice()
+          .sort((a, b) => safeStr(a.title).localeCompare(safeStr(b.title)));
 
         const cwfHtml = (data.cwf && data.cwf.length) ? `
           <div class="cwf-card">
@@ -4178,7 +4176,7 @@
 
       const skills = Array.from(analysisResults.uniqueSkills.values())
         .filter(s => !query || s.title.toLowerCase().includes(query))
-        .sort((a, b) => b.roles.length - a.roles.length);
+        .sort((a, b) => safeStr(a.title).localeCompare(safeStr(b.title)));
 
       skillResults.innerHTML = skills.map(skill => {
         // Collect all proficiency levels from all roles
