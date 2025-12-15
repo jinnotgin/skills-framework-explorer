@@ -1549,6 +1549,64 @@
       color: var(--text-primary);
     }
 
+    .compare-pill.selectable {
+      cursor: pointer;
+      position: relative;
+      padding-right: 0.55rem;
+    }
+
+    .compare-pill .caret {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-left: 0.1rem;
+    }
+
+    .compare-picker-popover {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 240px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 0.35rem;
+      z-index: 5;
+    }
+
+    .compare-picker-option {
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      padding: 0.45rem 0.6rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .compare-picker-option:hover {
+      background: var(--accent-soft);
+    }
+
+    .compare-picker-option.selected {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--accent-primary);
+    }
+
+    .compare-picker-option .role-label {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.83rem;
+    }
+
+    .compare-picker-option .role-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
     .compare-pill .dot {
       width: 10px;
       height: 10px;
@@ -1582,6 +1640,50 @@
       align-items: center;
       flex-wrap: wrap;
       margin-bottom: 0.75rem;
+    }
+
+    .compare-picker-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .compare-picker-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      min-width: 180px;
+    }
+
+    .compare-picker-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .compare-picker {
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--border-light);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+
+    .compare-picker:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .compare-picker-helper {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      min-width: 220px;
     }
 
     .filter-btn {
@@ -2962,6 +3064,8 @@
     let currentlySelectedSkillElement = null;
     let currentlySelectedSkillKey = null;
     let compareFilter = 'all';
+    let compareSelection = { role1: null, role2: null };
+    let openComparePicker = null;
 
     let dragCounter = 0; // Track drag enter/leave for nested elements
 
@@ -3043,6 +3147,12 @@
     function parseRoleKey(key) {
       const [sector, track, role] = key.split('|||');
       return { sector, track, role };
+    }
+
+    function formatRoleLabel(roleData) {
+      const name = safeStr(roleData.role);
+      const track = safeStr(roleData.track);
+      return track ? `${name} · ${track}` : name;
     }
 
     function escapeHtml(str) {
@@ -3154,6 +3264,13 @@
         preloadBannerText.textContent = isLoading ? 'Loading data...' : 'Data ready';
       }
       updateGlobalStatus();
+    }
+
+    function setDefaultCompareSelection() {
+      if (!analysisResults || !analysisResults.roles) return;
+      const keys = Array.from(analysisResults.roles.keys());
+      compareSelection.role1 = keys[0] || null;
+      compareSelection.role2 = keys.find(k => k !== compareSelection.role1) || null;
     }
 
     // =========================================================================
@@ -3835,6 +3952,8 @@
         totalTscs: totalTscCount
       };
 
+      setDefaultCompareSelection();
+
       statRoles.textContent = analysisResults.totalRoles;
       statUniqueSkills.textContent = analysisResults.totalUniqueSkills;
 
@@ -4022,28 +4141,57 @@
 
     function renderCompareView() {
       const compareContent = document.getElementById('compareContent');
+      clearSkillSelection();
+      closeDetailPanel();
+      openComparePicker = null;
 
-      if (analysisResults.totalRoles !== 2) {
+      if (analysisResults.totalRoles < 2) {
         compareContent.innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">⚖️</div>
-            <div class="empty-state-title">Select exactly 2 roles to compare</div>
+            <div class="empty-state-title">Select at least 2 roles to compare</div>
             <div class="empty-state-text">
-              Pick two roles to see all shared and unique skills side by side.
+              Choose two roles to see all shared and unique skills side by side.
             </div>
           </div>
         `;
         return;
       }
 
-      const roleKeys = Array.from(analysisResults.roles.keys());
-      const role1Key = roleKeys[0];
-      const role2Key = roleKeys[1];
+      const roleOptions = Array.from(analysisResults.roles.entries())
+        .map(([key, data]) => ({
+          key,
+          label: formatRoleLabel(data),
+          role: data
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      if (!compareSelection.role1 || !analysisResults.roles.has(compareSelection.role1)) {
+        compareSelection.role1 = roleOptions[0]?.key || null;
+      }
+      if (!compareSelection.role2 || !analysisResults.roles.has(compareSelection.role2) || compareSelection.role2 === compareSelection.role1) {
+        compareSelection.role2 = roleOptions.find(o => o.key !== compareSelection.role1)?.key || null;
+      }
+
+      let role1Key = compareSelection.role1;
+      let role2Key = compareSelection.role2;
+
+      if (!role1Key || !analysisResults.roles.has(role1Key)) {
+        role1Key = roleOptions[0]?.key || null;
+      }
+      if (!role2Key || !analysisResults.roles.has(role2Key) || role2Key === role1Key) {
+        role2Key = roleOptions.find(o => o.key !== role1Key)?.key || role2Key;
+      }
+
+      compareSelection.role1 = role1Key;
+      compareSelection.role2 = role2Key;
+
       const role1 = analysisResults.roles.get(role1Key);
       const role2 = analysisResults.roles.get(role2Key);
-      const sameName = role1.role === role2.role;
-      const role1Label = sameName ? `${safeStr(role1.role)} · ${safeStr(role1.track)}` : safeStr(role1.role);
-      const role2Label = sameName ? `${safeStr(role2.role)} · ${safeStr(role2.track)}` : safeStr(role2.role);
+      if (!role1 || !role2) return;
+
+      const role1Label = formatRoleLabel(role1);
+      const role2Label = formatRoleLabel(role2);
 
       const skills1 = new Map();
       const skills2 = new Map();
@@ -4077,15 +4225,17 @@
         <div class="compare-header">
           <div class="compare-meta">
             <div style="font-weight: 700; color: var(--text-primary);">Comparing</div>
-            <div class="compare-pill role1">
+            <div class="compare-pill role1 selectable" data-slot="role1" title="Click to change role">
               <span class="dot"></span>
               <span class="role-name">${escapeHtml(role1Label)}</span>
+              <span class="caret">▼</span>
             </div>
             <span style="font-weight: 600; color: var(--text-muted);">vs</span>
-            <div class="compare-pill role2">
-              <span class="dot"></span>
-              <span class="role-name">${escapeHtml(role2Label)}</span>
-            </div>
+            <div class="compare-pill role2 selectable" data-slot="role2" title="Click to change role">
+            <span class="dot"></span>
+            <span class="role-name">${escapeHtml(role2Label)}</span>
+            <span class="caret">▼</span>
+          </div>
           </div>
         </div>
 
@@ -4110,11 +4260,6 @@
               return true;
             })
             .map(skill => {
-            const profStr1 = skill.prof1.length ? skill.prof1.join(', ') : '';
-            const profStr2 = skill.prof2.length ? skill.prof2.join(', ') : '';
-            const isShared = !!(skill.skill1 && skill.skill2);
-            const onlyRole1 = skill.skill1 && !skill.skill2;
-            const onlyRole2 = skill.skill2 && !skill.skill1;
             const hasBoth = skill.skill1 && skill.skill2;
             const max1 = skill.prof1.length ? Math.max(...skill.prof1) : null;
             const max2 = skill.prof2.length ? Math.max(...skill.prof2) : null;
@@ -4146,6 +4291,64 @@
           }).join('')}
         </div>
       `;
+
+      const closePopovers = () => {
+        compareContent.querySelectorAll('.compare-picker-popover').forEach(el => el.remove());
+        openComparePicker = null;
+      };
+
+      const handleOutsideClick = (event) => {
+        if (!event.target.closest('.compare-pill.selectable') && !event.target.closest('.compare-picker-popover')) {
+          closePopovers();
+        }
+      };
+
+      const openPopoverFor = (slot, pillEl) => {
+        closePopovers();
+        openComparePicker = slot;
+        const popover = document.createElement('div');
+        popover.className = 'compare-picker-popover';
+        popover.innerHTML = roleOptions.map(opt => `
+          <button class="compare-picker-option ${opt.key === compareSelection[slot] ? 'selected' : ''}" data-key="${escapeHtml(opt.key)}">
+            <span class="role-label">${escapeHtml(opt.label)}</span>
+            <span class="role-meta">${escapeHtml(safeStr(opt.role.sector) || '—')}${safeStr(opt.role.track) ? ' · ' + escapeHtml(safeStr(opt.role.track)) : ''}</span>
+          </button>
+        `).join('');
+        pillEl.appendChild(popover);
+
+        popover.querySelectorAll('.compare-picker-option').forEach(btn => {
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const key = btn.dataset.key;
+            const otherSlot = slot === 'role1' ? 'role2' : 'role1';
+            const otherKey = compareSelection[otherSlot];
+            const currentKey = compareSelection[slot];
+
+            compareSelection[slot] = key;
+            if (key === otherKey) {
+              const fallback = roleOptions.find(o => o.key !== key)?.key || currentKey;
+              compareSelection[otherSlot] = fallback;
+            }
+
+            openComparePicker = null;
+            renderCompareView();
+          });
+        });
+
+        setTimeout(() => document.addEventListener('click', handleOutsideClick, { once: true }), 0);
+      };
+
+      compareContent.querySelectorAll('.compare-pill.selectable').forEach(pill => {
+        pill.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const slot = pill.dataset.slot;
+          if (openComparePicker === slot) {
+            closePopovers();
+            return;
+          }
+          openPopoverFor(slot, pill);
+        });
+      });
 
       compareContent.querySelectorAll('.compare-row').forEach(row => {
         row.addEventListener('click', () => {
