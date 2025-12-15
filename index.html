@@ -1642,6 +1642,46 @@
       margin-bottom: 0.75rem;
     }
 
+    .compare-toggle {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.7rem;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      background: var(--bg-secondary);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: var(--transition-fast);
+    }
+
+    .compare-toggle:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .compare-toggle .toggle-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: var(--radius-full);
+      background: var(--border-medium);
+    }
+
+    .compare-toggle.active {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      background: var(--accent-soft);
+    }
+
+    .compare-toggle.active .toggle-dot {
+      background: var(--accent-primary);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
     .compare-picker-row {
       display: flex;
       flex-wrap: wrap;
@@ -1797,13 +1837,22 @@
       align-items: center;
       justify-content: flex-start;
       min-height: 32px;
+      align-items: flex-start;
     }
 
     .compare-levels {
       display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      width: 100%;
+      align-items: flex-start;
+    }
+
+    .compare-levels.compact {
+      flex-direction: row;
+      flex-wrap: wrap;
       align-items: center;
       gap: 0.35rem;
-      flex-wrap: wrap;
     }
 
     .compare-level-label {
@@ -1863,6 +1912,27 @@
     .compare-level-circle.highlight {
       outline: 2px solid var(--warning);
       outline-offset: 1px;
+    }
+
+    .compare-level-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.45rem;
+      line-height: 1.4;
+    }
+
+    .compare-levels.compact .compare-level-entry {
+      align-items: center;
+    }
+
+    .compare-levels:not(.compact) .compare-level-entry {
+      align-items: flex-start;
+    }
+
+    .compare-level-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      flex: 1;
     }
 
     .compare-levels-row {
@@ -2489,7 +2559,11 @@
         align-items: center;
         justify-content: center;
         padding: 0.625rem 0.5rem;
-        gap: 0.25rem;
+        gap: 0.35rem;
+      }
+
+      .compare-levels {
+        align-items: stretch;
       }
 
       .compare-level:first-of-type {
@@ -3066,6 +3140,7 @@
     let compareFilter = 'all';
     let compareSelection = { role1: null, role2: null };
     let openComparePicker = null;
+    let compareShowDescriptions = false;
 
     let dragCounter = 0; // Track drag enter/leave for nested elements
 
@@ -4242,8 +4317,13 @@
         <div class="compare-filter">
           <button class="filter-btn ${compareFilter === 'all' ? 'active' : ''}" data-filter="all">All</button>
           <button class="filter-btn ${compareFilter === 'shared' ? 'active' : ''}" data-filter="shared">Shared</button>
+          <button class="filter-btn ${compareFilter === 'diff' ? 'active' : ''}" data-filter="diff">Differences</button>
           <button class="filter-btn ${compareFilter === 'role1' ? 'active' : ''}" data-filter="role1">Only in ${escapeHtml(role1Label)}</button>
           <button class="filter-btn ${compareFilter === 'role2' ? 'active' : ''}" data-filter="role2">Only in ${escapeHtml(role2Label)}</button>
+          <button class="compare-toggle ${compareShowDescriptions ? 'active' : ''}" id="compareDescToggle">
+            <span class="toggle-dot"></span>
+            <span>${compareShowDescriptions ? 'Hide' : 'Show'} details</span>
+          </button>
         </div>
 
         <div class="compare-table">
@@ -4257,6 +4337,14 @@
               if (compareFilter === 'shared') return skill.skill1 && skill.skill2;
               if (compareFilter === 'role1') return skill.skill1 && !skill.skill2;
               if (compareFilter === 'role2') return skill.skill2 && !skill.skill1;
+              if (compareFilter === 'diff') {
+                const onlyOne = (skill.skill1 && !skill.skill2) || (!skill.skill1 && skill.skill2);
+                const both = skill.skill1 && skill.skill2;
+                const levelDiff = both && skill.prof1.length && skill.prof2.length
+                  ? Math.max(...skill.prof1) !== Math.max(...skill.prof2)
+                  : false;
+                return onlyOne || levelDiff;
+              }
               return true;
             })
             .map(skill => {
@@ -4266,12 +4354,46 @@
             const hasDiff = hasBoth && max1 !== max2;
             const highlight1 = hasDiff && max1 > max2;
             const highlight2 = hasDiff && max2 > max1;
-            const levelChips1 = skill.prof1.length
-              ? skill.prof1.map(l => `<span class="compare-level-circle role1 ${highlight1 && l === max1 ? 'highlight' : ''}">${escapeHtml(l)}</span>`).join('')
-              : `<span class="compare-level-circle">–</span>`;
-            const levelChips2 = skill.prof2.length
-              ? skill.prof2.map(l => `<span class="compare-level-circle role2 ${highlight2 && l === max2 ? 'highlight' : ''}">${escapeHtml(l)}</span>`).join('')
-              : `<span class="compare-level-circle">–</span>`;
+            const showDescriptions = compareShowDescriptions && (!hasBoth || max1 !== max2);
+
+            const buildLevelEntries = (skillObj, side, highlightLevel, otherSkillObj) => {
+              if (!skillObj) {
+                return `<div class="compare-level-entry"><span class="compare-level-circle">–</span>${showDescriptions ? '<span class="compare-level-desc"></span>' : ''}</div>`;
+              }
+              const entries = Array.from(skillObj.proficiencies.entries())
+                .map(([lvl, data]) => ({
+                  level: parseInt(lvl, 10) || lvl,
+                  desc: safeStr(data?.proficiencyDescription)
+                }))
+                .sort((a, b) => {
+                  const an = typeof a.level === 'number';
+                  const bn = typeof b.level === 'number';
+                  if (an && bn) return b.level - a.level;
+                  if (an) return -1;
+                  if (bn) return 1;
+                  return safeStr(b.level).localeCompare(safeStr(a.level));
+                });
+
+              if (!entries.length) {
+                return `<div class="compare-level-entry"><span class="compare-level-circle">–</span>${showDescriptions ? '<span class="compare-level-desc"></span>' : ''}</div>`;
+              }
+
+              // If both sides share the same top level, skip showing descriptions for that level.
+              const topOther = otherSkillObj ? Array.from(otherSkillObj.proficiencies.keys()).map(n => parseInt(n, 10) || n).sort((a, b) => b - a)[0] : null;
+
+              return entries.map(entry => {
+                const shouldShowDesc = showDescriptions && (topOther === null || entry.level !== topOther);
+                return `
+                <div class="compare-level-entry">
+                  <span class="compare-level-circle ${side} ${highlightLevel && entry.level === highlightLevel ? 'highlight' : ''}">${escapeHtml(entry.level)}</span>
+                  ${shouldShowDesc ? `<span class="compare-level-desc">${escapeHtml(entry.desc || 'No description provided.')}</span>` : ''}
+                </div>
+              `;
+              }).join('');
+            };
+
+            const levelEntries1 = buildLevelEntries(skill.skill1, 'role1', highlight1 ? max1 : null, skill.skill2);
+            const levelEntries2 = buildLevelEntries(skill.skill2, 'role2', highlight2 ? max2 : null, skill.skill1);
             return `
               <div class="compare-row" data-skill-title="${escapeHtml(skill.title)}" data-role1-key="${escapeHtml(role1Key)}" data-role2-key="${escapeHtml(role2Key)}">
                 <div class="compare-skill">
@@ -4279,11 +4401,11 @@
                 </div>
                 <div class="compare-levels-row">
                   <div class="compare-level">
-                    <div class="compare-levels ${skill.skill1 ? '' : 'empty'}">${levelChips1}</div>
+                    <div class="compare-levels ${skill.skill1 ? '' : 'empty'} ${compareShowDescriptions && showDescriptions ? '' : 'compact'}">${levelEntries1}</div>
                   </div>
                   <div class="compare-level-vs">vs</div>
                   <div class="compare-level">
-                    <div class="compare-levels ${skill.skill2 ? '' : 'empty'}">${levelChips2}</div>
+                    <div class="compare-levels ${skill.skill2 ? '' : 'empty'} ${compareShowDescriptions && showDescriptions ? '' : 'compact'}">${levelEntries2}</div>
                   </div>
                 </div>
               </div>
@@ -4370,6 +4492,14 @@
           renderCompareView();
         });
       });
+
+      const descToggle = document.getElementById('compareDescToggle');
+      if (descToggle) {
+        descToggle.addEventListener('click', () => {
+          compareShowDescriptions = !compareShowDescriptions;
+          renderCompareView();
+        });
+      }
     }
 
     function renderSkillView() {
