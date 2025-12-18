@@ -1727,6 +1727,9 @@
     }
 
     .filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
       border: 1px solid var(--border-light);
       background: var(--bg-secondary);
       color: var(--text-secondary);
@@ -1751,6 +1754,28 @@
       box-shadow: inset 0 0 0 1px var(--accent-primary);
     }
 
+    .filter-dot {
+      width: 10px;
+      height: 10px;
+      min-width: 10px;
+      min-height: 10px;
+      flex-shrink: 0;
+      aspect-ratio: 1 / 1;
+      border-radius: var(--radius-full);
+      background: var(--border-medium);
+      box-shadow: 0 0 0 4px transparent;
+    }
+
+    .filter-dot.role1 {
+      background: var(--accent-primary);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .filter-dot.role2 {
+      background: var(--accent-secondary);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+    }
+
     .compare-table-head {
       display: grid;
       grid-template-columns: 1.2fr 0.9fr 0.9fr;
@@ -1765,6 +1790,12 @@
       letter-spacing: 0.05em;
       text-transform: uppercase;
       color: var(--text-muted);
+    }
+
+    .compare-role-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
     }
 
     .compare-row {
@@ -4316,10 +4347,10 @@
 
         <div class="compare-filter">
           <button class="filter-btn ${compareFilter === 'all' ? 'active' : ''}" data-filter="all">All</button>
-          <button class="filter-btn ${compareFilter === 'shared' ? 'active' : ''}" data-filter="shared">Shared</button>
-          <button class="filter-btn ${compareFilter === 'diff' ? 'active' : ''}" data-filter="diff">Differences</button>
-          <button class="filter-btn ${compareFilter === 'role1' ? 'active' : ''}" data-filter="role1">Only in ${escapeHtml(role1Label)}</button>
-          <button class="filter-btn ${compareFilter === 'role2' ? 'active' : ''}" data-filter="role2">Only in ${escapeHtml(role2Label)}</button>
+          <button class="filter-btn ${compareFilter === 'shared' ? 'active' : ''}" data-filter="shared">Common Skills</button>
+          <button class="filter-btn ${compareFilter === 'diff' ? 'active' : ''}" data-filter="diff">Only Gaps</button>
+          <button class="filter-btn ${compareFilter === 'role1' ? 'active' : ''}" data-filter="role1" title="Only in ${escapeHtml(role1Label)}" aria-label="Only in ${escapeHtml(role1Label)}">Only in <span class="filter-dot role1" aria-hidden="true"></span> Role</button>
+          <button class="filter-btn ${compareFilter === 'role2' ? 'active' : ''}" data-filter="role2" title="Only in ${escapeHtml(role2Label)}" aria-label="Only in ${escapeHtml(role2Label)}">Only in <span class="filter-dot role2" aria-hidden="true"></span> Role</button>
           <button class="compare-toggle ${compareShowDescriptions ? 'active' : ''}" id="compareDescToggle">
             <span class="toggle-dot"></span>
             <span>${compareShowDescriptions ? 'Hide' : 'Show'} details</span>
@@ -4329,8 +4360,8 @@
         <div class="compare-table">
           <div class="compare-table-head">
             <div>Skill</div>
-            <div>${escapeHtml(role1Label)}</div>
-            <div>${escapeHtml(role2Label)}</div>
+            <div class="compare-role-header"><span class="filter-dot role1" aria-hidden="true"></span><span>${escapeHtml(role1Label)}</span></div>
+            <div class="compare-role-header"><span class="filter-dot role2" aria-hidden="true"></span><span>${escapeHtml(role2Label)}</span></div>
           </div>
           ${sharedSkills
             .filter(skill => {
