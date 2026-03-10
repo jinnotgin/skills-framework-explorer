@@ -1,0 +1,5208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Skills Framework Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- JSZip for decompressing preloaded data -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <!-- SheetJS for XLSX parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --bg-hover: #e2e8f0;
+      --bg-active: #dbeafe;
+      
+      --accent-primary: #3b82f6;
+      --accent-secondary: #8b5cf6;
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      --accent-soft: rgba(59, 130, 246, 0.1);
+      --accent-medium: rgba(59, 130, 246, 0.2);
+      
+      --success: #10b981;
+      --success-soft: rgba(16, 185, 129, 0.1);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.1);
+      --danger: #ef4444;
+      --danger-soft: rgba(239, 68, 68, 0.1);
+      
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --text-inverse: #ffffff;
+      
+      --border-light: #e2e8f0;
+      --border-medium: #cbd5e1;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-full: 9999px;
+      
+      --transition-fast: 150ms ease;
+      --transition-normal: 250ms ease;
+      --transition-slow: 350ms ease;
+      
+      --header-height: 56px;
+      --sidebar-width: 320px;
+      --detail-width: 540px;
+      --bottom-nav-height: 60px;
+      
+      /* Responsive breakpoints */
+      --breakpoint-sm: 640px;
+      --breakpoint-md: 768px;
+      --breakpoint-lg: 1024px;
+      --breakpoint-xl: 1280px;
+      --small-mobile-width: 380px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      height: var(--header-height);
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-gradient);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 1.1rem;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-status {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.375rem 0.75rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-full);
+      background: var(--text-muted);
+      transition: var(--transition-fast);
+    }
+
+    .status-dot.loaded {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    .status-dot.partial {
+      background: var(--warning);
+      box-shadow: 0 0 6px var(--warning);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .view-toggle {
+      display: flex;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      padding: 3px;
+    }
+
+    .view-toggle-btn {
+      padding: 0.4rem 0.875rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--radius-full);
+      transition: var(--transition-fast);
+    }
+
+    .view-toggle-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .view-toggle-btn.active {
+      background: var(--bg-secondary);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Mobile menu button */
+    .mobile-menu-btn {
+      display: none;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-tertiary);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .mobile-menu-btn:hover {
+      background: var(--bg-hover);
+    }
+
+    /* ===== SIDEBAR BACKDROP ===== */
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 199;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--transition-normal), visibility var(--transition-normal);
+    }
+
+    .sidebar-backdrop.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* ===== MAIN LAYOUT ===== */
+    .app-container {
+      display: flex;
+      height: calc(100vh - var(--header-height));
+      margin-top: var(--header-height);
+    }
+
+    /* ===== LEFT SIDEBAR ===== */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-light);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    /* Collapsible file upload section */
+    .sidebar-file-section {
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .file-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: var(--transition-fast);
+    }
+
+    .file-section-header:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .file-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .file-section-status-wrapper {
+      display: flex;
+      gap: 1.25rem;
+    }
+
+    .file-section-status {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .file-section-status .mini-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: var(--radius-full);
+      background: var(--text-muted);
+    }
+
+    .file-section-status .mini-dot.loaded {
+      background: var(--success);
+    }
+
+    .file-section-status .mini-dot.partial {
+      background: var(--warning);
+    }
+
+    .file-section-chevron {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      transition: var(--transition-fast);
+    }
+
+    .sidebar-file-section.expanded .file-section-chevron {
+      transform: rotate(180deg);
+    }
+
+    .file-section-body {
+      display: none;
+      padding: 0 1rem 1rem;
+    }
+
+    .sidebar-file-section.expanded .file-section-body {
+      display: block;
+    }
+
+    .file-upload-zone {
+      border: 1.5px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      background: var(--bg-tertiary);
+    }
+
+    .file-upload-zone:hover {
+      border-color: var(--accent-primary);
+      background: var(--accent-soft);
+    }
+
+    .file-upload-zone.drag-over {
+      border-color: var(--accent-primary);
+      background: var(--accent-medium);
+    }
+
+    .file-upload-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .file-upload-hint {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-status-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      margin-top: 0.75rem;
+    }
+
+    .file-status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      font-size: 0.65rem;
+    }
+
+    .file-status-item .icon {
+      font-size: 0.6rem;
+    }
+
+    .file-status-item.loaded .icon {
+      color: var(--success);
+    }
+
+    .file-status-item.missing .icon {
+      color: var(--text-muted);
+    }
+
+    .file-status-item .label {
+      color: var(--text-secondary);
+    }
+
+    .file-status-item.loaded .label {
+      color: var(--text-primary);
+    }
+
+    /* ===== SIDEBAR MAIN CONTENT ===== */
+    .sidebar-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .sidebar-search-section {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .sidebar-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .search-box {
+      position: relative;
+      margin-bottom: 0.75rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.5rem 0.875rem 0.5rem 2.25rem;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      background: var(--bg-tertiary);
+      transition: var(--transition-fast);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      background: var(--bg-secondary);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .filter-select {
+      width: 100%;
+      padding: 0.4rem 0.625rem;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      background: var(--bg-secondary);
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+
+    /* ===== ROLE LIST ===== */
+    .role-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 1rem;
+      min-height: 0;
+    }
+
+    .sector-group {
+      margin-bottom: 0.375rem;
+    }
+
+    .sector-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.625rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      user-select: none;
+      transition: var(--transition-fast);
+    }
+
+    .sector-header:hover {
+      background: var(--bg-hover);
+    }
+
+    .sector-header .chevron {
+      transition: var(--transition-fast);
+      font-size: 0.65rem;
+    }
+
+    .sector-header-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      position: relative;
+    }
+
+    .sector-select-all {
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--border-light);
+      background: var(--bg-secondary);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sector-select-all svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--text-secondary);
+      fill: none;
+      transition: var(--transition-fast);
+    }
+
+    .sector-select-all.filled svg {
+      stroke: var(--accent-primary);
+    }
+
+    .sector-select-all:hover:not(:disabled) {
+      border-color: var(--accent-primary);
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .sector-header:hover .sector-select-all,
+    .sector-header:focus-within .sector-select-all {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sector-select-all.always-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sector-select-all:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .sector-select-all::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text-primary);
+      color: var(--text-inverse);
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.65rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+      z-index: 2;
+    }
+
+    .sector-select-all:hover::after,
+    .sector-select-all:focus-visible::after {
+      opacity: 1;
+    }
+
+    .sector-header.expanded .chevron {
+      transform: rotate(90deg);
+    }
+
+    .sector-header .count {
+      margin-left: 0.25rem;
+      background: var(--bg-hover);
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-full);
+      font-size: 0.6rem;
+      font-weight: 500;
+    }
+
+    .sector-roles {
+      display: none;
+      flex-direction: column;
+      gap: 1px;
+      padding: 0.375rem 0 0.375rem 0.75rem;
+    }
+
+    .sector-group.expanded .sector-roles {
+      display: flex;
+    }
+
+    .role-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.625rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .role-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .role-item.selected {
+      background: var(--accent-soft);
+    }
+
+    .role-checkbox {
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid var(--border-medium);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: var(--transition-fast);
+      font-size: 0.55rem;
+    }
+
+    .role-item.selected .role-checkbox {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+
+    .role-checkbox .check {
+      display: none;
+    }
+
+    .role-item.selected .role-checkbox .check {
+      display: block;
+    }
+
+    .role-name {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      flex: 1;
+    }
+
+    .role-item.selected .role-name {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ===== SELECTION TRAY (Bottom of sidebar) ===== */
+    .selection-tray {
+      border-top: 1px solid var(--border-light);
+      background: var(--bg-tertiary);
+    }
+
+    .selection-tray-main {
+      padding: 0.75rem 1rem;
+    }
+
+    .selection-tray-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .selection-count-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .selection-count {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .selection-expand-btn {
+      font-size: 0.65rem;
+      color: var(--accent-primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .selection-expand-btn:hover {
+      background: var(--accent-soft);
+    }
+
+    .selection-clear {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .selection-clear:hover {
+      color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    /* Expandable chips area */
+    .selected-roles-expandable {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height var(--transition-normal);
+    }
+
+    .selected-roles-expandable.expanded {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .selected-roles-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      padding: 0.75rem 0 0.25rem;
+    }
+
+    .selected-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.4rem;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--radius-full);
+      font-size: 0.65rem;
+      color: var(--accent-primary);
+    }
+
+    .selected-chip .remove {
+      cursor: pointer;
+      opacity: 0.7;
+      font-size: 0.7rem;
+    }
+
+    .selected-chip .remove:hover {
+      opacity: 1;
+    }
+
+    .analyze-btn {
+      width: 100%;
+      padding: 0.625rem 1rem;
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.625rem;
+      transition: var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .analyze-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .analyze-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ===== MAIN CONTENT AREA ===== */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-primary);
+      min-width: 0;
+    }
+
+    #resultsContainer {
+      overflow: auto;
+    }
+
+    .content-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-light);
+      background: var(--bg-secondary);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .content-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      min-width: 0;
+    }
+
+    .content-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .content-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .content-stats {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stat-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .stat-icon.roles {
+      background: var(--accent-soft);
+      color: var(--accent-primary);
+    }
+
+    .stat-icon.skills {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .stat-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    /* Content body scrolling */
+    .content-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 1.25rem;
+      min-height: 0;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.375rem;
+    }
+
+    .empty-state-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      max-width: 360px;
+    }
+
+    .empty-state.is-loading {
+      gap: 0.5rem;
+    }
+
+    .empty-state.is-loading .empty-state-icon,
+    .empty-state.is-loading .empty-state-title,
+    .empty-state.is-loading .empty-state-text,
+    .empty-state.is-loading .empty-state-steps {
+      display: none;
+    }
+
+    .preload-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.9rem 1.1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 1.25rem;
+    }
+
+    .preload-spinner {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 3px solid var(--border-medium);
+      border-top-color: var(--accent-primary);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .empty-state-steps {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1.25rem;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      background: var(--accent-soft);
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .step-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* ===== VIEW CONTAINERS ===== */
+    .view-container {
+      display: none;
+    }
+
+    .view-container.active {
+      display: block;
+    }
+
+    /* ===== ROLE CARDS ===== */
+    .role-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+    }
+
+    .role-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .role-card-header {
+      padding: 0.875rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      background: var(--bg-secondary);
+    }
+
+    .role-card-header:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .role-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .role-card-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .role-card-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .role-card-badges {
+      display: flex;
+      gap: 0.375rem;
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+    }
+
+    .badge {
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-full);
+      font-size: 0.65rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-primary {
+      background: var(--accent-soft);
+      color: var(--accent-primary);
+    }
+
+    .badge-success {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .badge-warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .role-card-toggle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      transition: var(--transition-fast);
+      margin-left: 0.5rem;
+    }
+
+    .role-card.expanded .role-card-toggle {
+      transform: rotate(180deg);
+    }
+
+    .role-card-body {
+      display: none;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .role-card.expanded .role-card-body {
+      display: block;
+    }
+
+    /* ===== SKILLS SECTION ===== */
+    .skills-section {
+      padding: 0.875rem 1rem;
+    }
+
+    .skills-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.625rem;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .cwf-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .cwf-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .cwf-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .cwf-toggle {
+      border: none;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-full);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.7rem;
+      color: var(--accent-primary);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .cwf-body {
+      display: none;
+      margin-top: 0.25rem;
+    }
+
+    .cwf-body.visible {
+      display: block;
+    }
+
+    .cwf-item {
+      margin-bottom: 0.65rem;
+    }
+
+    .cwf-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .cwf-item-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .cwf-task {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-left: 0.75rem;
+      margin-bottom: 0.2rem;
+      position: relative;
+    }
+
+    .cwf-task::before {
+      content: '•';
+      position: absolute;
+      left: -0.5rem;
+      color: var(--accent-primary);
+    }
+
+    .skills-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .skill-row {
+      display: flex;
+      align-items: center;
+      padding: 0.625rem 0.875rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      border: 1px solid transparent;
+    }
+
+    .skill-row:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-medium);
+    }
+
+    .skill-row.active {
+      background: var(--accent-soft);
+      border-color: var(--accent-primary);
+    }
+
+    .skill-row-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.625rem;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .skill-row-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .skill-row-title {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .skill-row-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .skill-row-badges {
+      display: flex;
+      gap: 0.25rem;
+      margin-left: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .proficiency-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      color: white;
+    }
+
+    .skill-row-arrow {
+      color: var(--text-muted);
+      margin-left: 0.375rem;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    /* ===== DETAIL PANEL ===== */
+    .detail-panel {
+      width: 0;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border-light);
+      overflow: hidden;
+      transition: width var(--transition-normal);
+      flex-shrink: 0;
+    }
+
+    .detail-panel.open {
+      width: var(--detail-width);
+    }
+
+    .detail-panel-inner {
+      width: var(--detail-width);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-panel-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .detail-panel-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .detail-panel-close {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+      flex-shrink: 0;
+    }
+
+    .detail-panel-close:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .detail-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      min-height: 0;
+    }
+
+    .detail-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .detail-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .detail-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .detail-content {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .detail-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+    }
+
+    /* Detail K&A styling */
+    .detail-ka-section {
+      margin-bottom: 1rem;
+    }
+
+    .detail-ka-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .detail-ka-title.knowledge {
+      color: var(--accent-primary);
+    }
+
+    .detail-ka-title.ability {
+      color: var(--success);
+    }
+
+    .detail-ka-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .detail-ka-item {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      padding: 0.4rem 0.625rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.4rem;
+    }
+
+    .detail-proficiency-section {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    .detail-proficiency-level {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--accent-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .detail-proficiency-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .proficiency-group {
+      margin-bottom: 1.25rem;
+      padding: 0.875rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+    }
+
+    .proficiency-group-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .proficiency-group-level {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      background: var(--accent-gradient);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .proficiency-group-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .proficiency-group-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+      padding: 0.5rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    /* ===== COMPARE VIEW ===== */
+    .compare-header {
+      display: flex;
+      gap: 0.875rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.875rem;
+      border-bottom: 1px solid var(--border-light);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .compare-role-card {
+      flex: 1;
+      padding: 0.875rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 2px solid var(--border-light);
+    }
+
+    .compare-role-card:nth-child(1) {
+      border-color: var(--accent-primary);
+    }
+
+    .compare-role-card:nth-child(2) {
+      border-color: var(--accent-secondary);
+    }
+
+    .compare-role-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      margin-bottom: 0.125rem;
+    }
+
+    .compare-role-sector {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .compare-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .compare-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.75rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .compare-pill.selectable {
+      cursor: pointer;
+      position: relative;
+      padding-right: 0.55rem;
+    }
+
+    .compare-pill .caret {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-left: 0.1rem;
+    }
+
+    .compare-picker-popover {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 240px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 0.35rem;
+      z-index: 5;
+    }
+
+    .compare-picker-option {
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      padding: 0.45rem 0.6rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .compare-picker-option:hover {
+      background: var(--accent-soft);
+    }
+
+    .compare-picker-option.selected {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--accent-primary);
+    }
+
+    .compare-picker-option .role-label {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.83rem;
+    }
+
+    .compare-picker-option .role-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .compare-pill .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: var(--radius-full);
+      background: var(--border-medium);
+    }
+
+    .compare-pill.role1 .dot {
+      background: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .compare-pill.role2 .dot {
+      background: var(--accent-secondary);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    }
+
+    .compare-table {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      max-height: calc(100vh - 220px);
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .compare-filter {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    .compare-toggle {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.7rem;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      background: var(--bg-secondary);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: var(--transition-fast);
+    }
+
+    .compare-toggle:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .compare-toggle .toggle-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: var(--radius-full);
+      background: var(--border-medium);
+    }
+
+    .compare-toggle.active {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      background: var(--accent-soft);
+    }
+
+    .compare-toggle.active .toggle-dot {
+      background: var(--accent-primary);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .compare-picker-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .compare-picker-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      min-width: 180px;
+    }
+
+    .compare-picker-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .compare-picker {
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--border-light);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+
+    .compare-picker:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .compare-picker-helper {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      min-width: 220px;
+    }
+
+    .filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border: 1px solid var(--border-light);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .filter-btn:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      box-shadow: inset 0 0 0 1px var(--accent-primary);
+    }
+
+    .filter-dot {
+      width: 10px;
+      height: 10px;
+      min-width: 10px;
+      min-height: 10px;
+      flex-shrink: 0;
+      aspect-ratio: 1 / 1;
+      border-radius: var(--radius-full);
+      background: var(--border-medium);
+      box-shadow: 0 0 0 4px transparent;
+    }
+
+    .filter-dot.role1 {
+      background: var(--accent-primary);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .filter-dot.role2 {
+      background: var(--accent-secondary);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+    }
+
+    .compare-table-head {
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr 0.9fr;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-tertiary);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .compare-role-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .compare-row {
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr 0.9fr;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-top: 1px solid var(--border-light);
+      align-items: center;
+      cursor: pointer;
+      transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .compare-row:hover {
+      background: var(--bg-hover);
+    }
+
+    .compare-row.active {
+      background: var(--accent-soft);
+      border-color: var(--accent-primary);
+      box-shadow: inset 3px 0 0 var(--accent-primary);
+    }
+
+    .compare-skill {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+
+    .compare-skill-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .compare-skill-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-full);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--bg-tertiary);
+      width: fit-content;
+    }
+
+    .compare-skill-tag.shared {
+      color: var(--success);
+      background: var(--success-soft);
+    }
+
+    .compare-skill-tag.role1 {
+      color: var(--accent-primary);
+      background: var(--accent-soft);
+    }
+
+    .compare-skill-tag.role2 {
+      color: var(--accent-secondary);
+      background: rgba(139, 92, 246, 0.12);
+    }
+
+    .compare-level {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 32px;
+      align-items: flex-start;
+    }
+
+    .compare-levels {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      width: 100%;
+      align-items: flex-start;
+    }
+
+    .compare-levels.compact {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .compare-level-label {
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .compare-level-label .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: var(--radius-full);
+      background: var(--border-medium);
+    }
+
+    .compare-level-label.role1 .dot {
+      background: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .compare-level-label.role2 .dot {
+      background: var(--accent-secondary);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    }
+
+    .compare-levels.empty .compare-level-circle {
+      background: var(--bg-secondary);
+      border: 1px dashed var(--border-medium);
+      color: var(--text-muted);
+    }
+
+    .compare-level-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: white;
+      background: var(--accent-gradient);
+    }
+
+    .compare-level-circle.role1 {
+      background: var(--accent-primary);
+    }
+
+    .compare-level-circle.role2 {
+      background: var(--accent-secondary);
+    }
+
+    .compare-level-circle.highlight {
+      outline: 2px solid var(--warning);
+      outline-offset: 1px;
+    }
+
+    .compare-level-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.45rem;
+      line-height: 1.4;
+    }
+
+    .compare-levels.compact .compare-level-entry {
+      align-items: center;
+    }
+
+    .compare-levels:not(.compact) .compare-level-entry {
+      align-items: flex-start;
+    }
+
+    .compare-level-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      flex: 1;
+    }
+
+    .compare-levels-row {
+      display: contents;
+    }
+
+    .compare-level-vs {
+      display: none;
+    }
+
+    /* ===== SKILL-CENTRIC VIEW ===== */
+    .skill-search-section {
+      margin-bottom: 1rem;
+    }
+
+    .skill-results {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .skill-result-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+
+    .skill-result-header {
+      padding: 0.875rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: var(--transition-fast);
+    }
+
+    .skill-result-header:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .skill-result-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .skill-result-title {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+    }
+
+    .skill-result-count {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .skill-result-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .skill-info-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      transition: var(--transition-fast);
+    }
+
+    .skill-info-btn:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    .skill-info-btn.active {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+
+    .skill-result-expand {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      transition: var(--transition-fast);
+    }
+
+    .skill-result-card.expanded .skill-result-expand {
+      transform: rotate(180deg);
+    }
+
+    .skill-result-roles {
+      display: none;
+      padding: 0.875rem 1rem;
+      border-top: 1px solid var(--border-light);
+      background: var(--bg-tertiary);
+    }
+
+    .skill-result-card.expanded .skill-result-roles {
+      display: block;
+    }
+
+    .role-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      margin-bottom: 0.375rem;
+      transition: var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .role-link:hover {
+      background: var(--accent-soft);
+    }
+
+    .role-link.active {
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 1px var(--accent-primary);
+    }
+
+    .role-link:last-child {
+      margin-bottom: 0;
+    }
+
+    .role-link-name {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+    }
+
+    .role-link-sector {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* ===== BOTTOM NAVIGATION ===== */
+    .bottom-nav {
+      display: none;
+    }
+
+    /* ===== UTILITIES ===== */
+    .hidden {
+      display: none !important;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-medium);
+      border-radius: var(--radius-full);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.25s ease forwards;
+    }
+
+    /* Full-page drop overlay */
+    .drop-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(95, 36, 159, 0.15);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .drop-overlay.active {
+      display: flex;
+    }
+
+    .drop-overlay-content {
+      padding: 2rem 3rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      border: 3px dashed var(--accent-primary);
+      text-align: center;
+    }
+
+    .drop-overlay-icon {
+      font-size: 3rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .drop-overlay-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent-primary);
+    }
+
+    .drop-overlay-hint {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    /* Fix alignment - ka item bullets */
+    .ka-item-bullet {
+      width: 5px;
+      height: 5px;
+      border-radius: var(--radius-full);
+      margin-top: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .ka-item-bullet.knowledge {
+      background: var(--accent-primary);
+    }
+
+    .ka-item-bullet.ability {
+      background: var(--success);
+    }
+
+    /* ============================================
+       MOBILE RESPONSIVE STYLES
+       ============================================ */
+
+    /* Tablet and below */
+    /* @media (max-width: 1024px) {
+      .detail-panel.open {
+        position: fixed;
+        right: 0;
+        top: var(--header-height);
+        height: calc(100vh - var(--header-height));
+        z-index: 50;
+        box-shadow: var(--shadow-xl);
+      }
+    } */
+
+    /* Tablet and below */
+    @media (max-width: 1024px) {
+      :root {
+        --header-height: 52px;
+      }
+
+      /* Header mobile adjustments */
+      .header {
+        padding: 0 0.75rem;
+      }
+
+      .header-status {
+        display: none;
+      }
+
+      .view-toggle {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: flex;
+      }
+
+      /* Sidebar as slide-out drawer */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 85vw;
+        max-width: var(--small-mobile-width);
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        z-index: 200;
+        transform: translateX(-100%);
+        transition: transform var(--transition-normal);
+        box-shadow: var(--shadow-xl);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      /* Add top padding in sidebar for status bar on mobile */
+      .sidebar-file-section {
+        padding-top: env(safe-area-inset-top, 0);
+      }
+
+      /* App container mobile */
+      .app-container {
+        flex-direction: column;
+      }
+
+      .main-content {
+        width: 100%;
+        height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
+      }
+
+      /* Add padding to account for bottom nav overlay */
+      .detail-panel-body {
+        padding-bottom: calc(var(--bottom-nav-height) + 2rem + env(safe-area-inset-bottom));
+      }
+
+      /* Bottom navigation */
+      .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: var(--bottom-nav-height);
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-light);
+        z-index: 100;
+        padding: 0.5rem;
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+        gap: 0.25rem;
+      }
+
+      .bottom-nav-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 0.65rem;
+        cursor: pointer;
+        border-radius: var(--radius-md);
+        transition: var(--transition-fast);
+        padding: 0.25rem;
+      }
+
+      .bottom-nav-btn:hover,
+      .bottom-nav-btn:active {
+        background: var(--bg-tertiary);
+      }
+
+      .bottom-nav-btn.active {
+        color: var(--accent-primary);
+        background: var(--accent-soft);
+      }
+
+      .bottom-nav-btn .icon {
+        font-size: 1.25rem;
+      }
+
+      /* Detail panel as full-screen modal */
+      .detail-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100vh;
+        z-index: 250;
+        transform: translateX(100%);
+        transition: transform var(--transition-normal);
+        border-left: none;
+      }
+
+      .detail-panel.open {
+        transform: translateX(0);
+        width: 100%;
+      }
+
+      .detail-panel-inner {
+        width: 100%;
+      }
+
+      .detail-panel-header {
+        padding: 1rem;
+        padding-top: max(1rem, env(safe-area-inset-top));
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+      }
+
+      .detail-panel-close {
+        width: 36px;
+        height: 36px;
+      }
+
+      /* Larger touch targets */
+      .role-item {
+        padding: 0.75rem;
+        min-height: 48px;
+      }
+
+      .skill-row {
+        padding: 0.875rem;
+        min-height: 56px;
+      }
+
+      .sector-header {
+        padding: 0.75rem;
+        min-height: 48px;
+      }
+
+      .role-checkbox {
+        width: 20px;
+        height: 20px;
+      }
+
+      .analyze-btn {
+        padding: 0.875rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      /* Prevent iOS zoom on inputs */
+      .search-input {
+        padding: 0.75rem 0.875rem 0.75rem 2.5rem;
+        font-size: 16px;
+      }
+
+      .filter-select {
+        padding: 0.625rem;
+        font-size: 16px;
+      }
+
+      .content-stats {
+        display: none;
+      }
+      
+      .stat-card {
+        flex: 1 1 calc(50% - 0.25rem);
+        min-width: 100px;
+      }
+
+      /* Content adjustments */
+      .content-header {
+        padding: 0.875rem 1rem;
+      }
+
+      .content-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+      }
+
+      /* Add role count badge inline with title */
+      .content-title::after {
+        content: attr(data-role-count) " roles";
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        background: var(--accent-soft);
+        color: var(--accent-primary);
+        border-radius: var(--radius-full);
+      }
+
+      .content-subtitle {
+        display: none;
+      }
+
+      .content-body {
+        padding: 0.875rem;
+        padding-bottom: calc(var(--bottom-nav-height) + 1.5rem);
+      }
+
+      .content-body:has(#compareContainer.active) {
+        overflow: hidden;
+      }
+
+      /* Role card mobile */
+      .role-card-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.75rem;
+      }
+
+      .role-card-title .badge {
+        display: none;
+      }
+
+      .role-card-badges {
+        margin-left: 0;
+        order: 3;
+        width: 100%;
+        margin-top: 0.25rem;
+      }
+
+      .role-card-toggle {
+        margin-left: auto;
+      }
+
+      /* Skills section mobile */
+      .skills-section {
+        padding: 0.75rem;
+      }
+
+      .skill-row-title {
+        font-size: 0.85rem;
+        white-space: normal;
+      }
+
+      /* Compare view mobile */
+      .compare-header {
+        position: relative;
+        top: 0;
+        z-index: 20;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.875rem;
+        margin: -0.875rem -0.875rem 0.75rem;
+        background: var(--bg-primary);
+        border-bottom: 1px solid var(--border-light);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+
+      .compare-meta {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .compare-role-card {
+        padding: 0.75rem;
+      }
+
+      .compare-role-name {
+        font-size: 0.85rem;
+      }
+
+      .compare-pill {
+        max-width: 35vw;
+        min-width: 0;
+      }
+
+      .compare-pill span.role-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .compare-table-head {
+        display: none;
+      }
+
+      .compare-table {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        margin-top: 0;
+      }
+
+      #compareContent {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      #compareContainer.active {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .compare-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        align-items: stretch;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        margin-bottom: 0.625rem;
+        box-shadow: var(--shadow-sm);
+        background: var(--bg-secondary);
+        padding: 0;
+      }
+
+      .compare-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .compare-skill {
+        flex: 1 1 100%;
+        padding: 0.75rem 0.875rem 0.625rem;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .compare-levels-row {
+        display: flex;
+        flex: 1 1 100%;
+        align-items: stretch;
+      }
+
+      .compare-level {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.625rem 0.5rem;
+        gap: 0.35rem;
+      }
+
+      .compare-levels {
+        align-items: stretch;
+      }
+
+      .compare-level:first-of-type {
+        border-bottom-left-radius: calc(var(--radius-lg) - 1px);
+      }
+
+      .compare-level:last-of-type {
+        border-bottom-right-radius: calc(var(--radius-lg) - 1px);
+      }
+
+      .compare-level-vs {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 0.5rem;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: var(--text-muted);
+      }
+
+      .compare-levels {
+        gap: 0.25rem;
+        justify-content: center;
+      }
+
+      .compare-level-label {
+        display: none;
+      }
+
+      .compare-level-circle {
+        width: 26px;
+        height: 26px;
+      }
+
+      .compare-filter {
+        display: none;
+      }
+
+      /* Selection tray mobile - shows above bottom nav */
+      .selection-tray {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+        background: var(--bg-tertiary);
+        /* Remove fixed positioning and transforms */
+        transform: none !important;
+        max-height: none;
+      }
+
+      .selection-tray.has-selection {
+        transform: translateY(0);
+      }
+
+      /* Always show minimal tray even when empty */
+      .selection-tray .selection-tray-main {
+        padding: 0.75rem 1rem;
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+      }
+
+      .selected-roles-expandable.expanded {
+        max-height: 25vh;
+      }
+
+      /* Empty state mobile */
+      .empty-state {
+        padding: 1.5rem;
+      }
+
+      .empty-state-icon {
+        font-size: 2.5rem;
+      }
+
+      .empty-state-title {
+        font-size: 1rem;
+      }
+
+      .empty-state-text {
+        font-size: 0.8rem;
+      }
+
+      .empty-state-steps {
+        gap: 1rem;
+      }
+
+      .step-number {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+      }
+
+      .step-text {
+        font-size: 0.7rem;
+      }
+
+      /* Drop overlay mobile */
+      .drop-overlay-content {
+        padding: 1.5rem 2rem;
+        margin: 1rem;
+      }
+
+      .drop-overlay-icon {
+        font-size: 2.5rem;
+      }
+
+      .drop-overlay-text {
+        font-size: 1rem;
+      }
+
+      /* Skill info button mobile */
+      .skill-info-btn {
+        width: 36px;
+        height: 36px;
+      }
+
+      /* Proficiency group mobile */
+      .proficiency-group {
+        padding: 0.75rem;
+      }
+
+      .proficiency-group-header {
+        flex-wrap: wrap;
+      }
+
+      /* Detail sections mobile */
+      .detail-section {
+        margin-bottom: 1rem;
+      }
+
+      .detail-ka-item {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      /* File upload zone mobile */
+      .file-upload-zone {
+        padding: 1rem;
+      }
+
+      .file-upload-text {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Small mobile */
+    @media (max-width: var(--small-mobile-width)) {
+      .sidebar {
+        width: 100vw;
+        max-width: none;
+      }
+
+      .stat-card {
+        flex: 1 1 100%;
+      }
+
+      .bottom-nav-btn {
+        font-size: 0.6rem;
+      }
+
+      .bottom-nav-btn .icon {
+        font-size: 1.1rem;
+      }
+
+      .compare-role-name {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Landscape mobile */
+    @media (max-width: 768px) and (orientation: landscape) {
+      .sidebar {
+        width: 50vw;
+        max-width: var(--small-mobile-width);
+      }
+
+      .detail-panel.open {
+        width: 60vw;
+      }
+
+      .detail-panel-inner {
+        width: 60vw;
+      }
+
+      .bottom-nav {
+        height: 50px;
+      }
+
+      .main-content {
+        height: calc(100vh - var(--header-height) - 50px);
+      }
+
+      .selection-tray {
+        bottom: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar backdrop overlay -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- Full-page drop overlay -->
+  <div class="drop-overlay" id="dropOverlay">
+    <div class="drop-overlay-content">
+      <div class="drop-overlay-icon">📂</div>
+      <div class="drop-overlay-text">Drop files here</div>
+      <div class="drop-overlay-hint">Upload your SkillsFuture XLSX files</div>
+    </div>
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-left">
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+      <div class="logo">
+        <div class="logo-icon">SF</div>
+        <span class="logo-text">Skills Framework Explorer</span>
+      </div>
+      <div class="header-status">
+        <span id="globalStatusDot" class="status-dot"></span>
+        <span id="globalStatusText" style="font-size: 0.7rem; color: var(--text-muted);">No files loaded</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="view-toggle">
+        <button id="viewRoleBtn" class="view-toggle-btn active">Role-Centric</button>
+        <button id="viewCompareBtn" class="view-toggle-btn">Compare</button>
+        <button id="viewSkillBtn" class="view-toggle-btn">Skill-Centric</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN LAYOUT ===== -->
+  <div class="app-container">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Collapsible File Upload Section -->
+      <div class="sidebar-file-section" id="fileSectionContainer">
+        <div class="file-section-header" id="fileSectionHeader">
+          <span class="file-section-title">
+            <span>📁</span>
+            <span>Data Files</span>
+          </span>
+          <div class="file-section-status-wrapper">
+            <div class="file-section-status">
+              <span id="miniDot1" class="mini-dot"></span>
+              <span id="miniDot2" class="mini-dot"></span>
+              <span id="miniDot3" class="mini-dot"></span>
+            </div>
+            <span class="file-section-chevron">▼</span>
+          </div>
+        </div>
+        <div class="file-section-body">
+          <div class="file-upload-zone" id="fileUploadZone">
+            <div class="file-upload-text">Drop XLSX files or click to browse</div>
+            <div class="file-upload-hint">Upload all 3 SkillsFuture files</div>
+            <input type="file" class="file-input" id="fileInput" accept=".xlsx" multiple />
+          </div>
+          <div class="file-status-list">
+            <div id="statusFramework" class="file-status-item missing">
+              <span class="icon">○</span>
+              <span class="label">Skills Framework Dataset</span>
+            </div>
+            <div id="statusUnique" class="file-status-item missing">
+              <span class="icon">○</span>
+              <span class="label">Unique Skills List</span>
+            </div>
+            <div id="statusTscMap" class="file-status-item missing">
+              <span class="icon">○</span>
+              <span class="label">TSC to Unique Skills Mapping</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main sidebar content -->
+      <div class="sidebar-main">
+        <div class="sidebar-search-section">
+          <div class="sidebar-title">Find Job Roles</div>
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="roleSearchInput" placeholder="Search roles..." />
+          </div>
+          <select class="filter-select" id="sectorFilter">
+            <option value="">All Sectors</option>
+          </select>
+        </div>
+
+        <div class="role-list-container" id="roleListContainer">
+          <div id="roleList">
+            <div class="empty-state" style="padding: 1.5rem 0.75rem;">
+              <div style="font-size: 1.5rem; opacity: 0.5; margin-bottom: 0.375rem;">📋</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Upload files to see roles</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selection Tray -->
+      <div class="selection-tray" id="selectionTray">
+        <div class="selection-tray-main">
+          <div class="selection-tray-header">
+            <div class="selection-count-wrapper">
+              <span class="selection-count"><span id="selectedCount">0</span> selected</span>
+              <button class="selection-expand-btn" id="selectionExpandBtn">View ▲</button>
+            </div>
+            <button class="selection-clear" id="clearSelectionBtn">Clear</button>
+          </div>
+          <div class="selected-roles-expandable" id="selectedRolesExpandable">
+            <div class="selected-roles-chips" id="selectedChips">
+              <!-- Selected role chips -->
+            </div>
+          </div>
+          <button class="analyze-btn" id="analyzeBtn" disabled>
+            <span>Analyse Skills</span>
+            <span>→</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <!-- EMPTY STATE -->
+      <div class="empty-state" id="emptyState">
+        <div class="preload-banner hidden" id="preloadBanner">
+          <div class="preload-spinner"></div>
+          <div id="preloadBannerText">Loading data...</div>
+        </div>
+        <div class="empty-state-icon" id="emptyStateIcon">🎯</div>
+        <div class="empty-state-title" id="emptyStateTitle">Ready to explore skills?</div>
+        <div class="empty-state-text" id="emptyStateText">
+          Upload your SkillsFuture XLSX files, select job roles, and analyse the technical skills and competencies required.
+        </div>
+        <div class="empty-state-steps" id="emptyStateSteps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-text">Upload files</div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-text">Select roles</div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-text">Analyse</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS CONTAINER -->
+      <div class="results-container hidden" id="resultsContainer">
+        <div class="content-header" id="contentHeader">
+          <div class="content-heading">
+            <div class="content-title">Skills Analysis</div>
+            <div class="content-subtitle" id="resultsSubtitle">Viewing skills for selected roles</div>
+          </div>
+          <div class="content-stats">
+            <div class="stat-card">
+              <div class="stat-icon roles">👤</div>
+              <div>
+                <div class="stat-value" id="statRoles">0</div>
+                <div class="stat-label">Roles</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon skills">💡</div>
+              <div>
+                <div class="stat-value" id="statUniqueSkills">0</div>
+                <div class="stat-label">Unique Skills</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-body" id="contentBody">
+          <!-- Role-Centric View -->
+          <div class="view-container active" id="roleViewContainer">
+            <div class="role-cards" id="roleCards"></div>
+          </div>
+
+          <!-- Compare View -->
+          <div class="view-container" id="compareContainer">
+            <div id="compareContent"></div>
+          </div>
+
+          <!-- Skill-Centric View -->
+          <div class="view-container" id="skillViewContainer">
+            <div class="skill-search-section">
+              <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="skillSearchInput" placeholder="Search unique skills..." />
+              </div>
+            </div>
+            <div class="skill-results" id="skillResults"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- DETAIL PANEL -->
+    <aside class="detail-panel" id="detailPanel">
+      <div class="detail-panel-inner">
+        <div class="detail-panel-header">
+          <div class="detail-panel-title" id="detailTitle">Skill Details</div>
+          <button class="detail-panel-close" id="detailCloseBtn">✕</button>
+        </div>
+        <div class="detail-panel-body" id="detailBody"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- BOTTOM NAVIGATION (Mobile) -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bottom-nav-btn" data-view="roles" id="bottomNavRoles">
+      <span class="icon">📋</span>
+      <span>Roles</span>
+    </button>
+    <button class="bottom-nav-btn active" data-view="role" id="bottomNavAnalysis">
+      <span class="icon">👤</span>
+      <span>Analysis</span>
+    </button>
+    <button class="bottom-nav-btn" data-view="compare" id="bottomNavCompare">
+      <span class="icon">⚖️</span>
+      <span>Compare</span>
+    </button>
+    <button class="bottom-nav-btn" data-view="skill" id="bottomNavSkill">
+      <span class="icon">💡</span>
+      <span>Skills</span>
+    </button>
+  </nav>
+
+  <script>
+    // =========================================================================
+    // PRELOADED DATA - Will be fetched from relative URL
+    // =========================================================================
+    let PRELOADED_DATA = null;
+  </script>
+
+  <script>
+    // =========================================================================
+    // PRELOAD DATA FUNCTION - Fetches from zipped JSON
+    // =========================================================================
+    async function fetchPreloadedData(url = './data/skills-framework-data.json.zip') {
+      try {
+        console.log(`Fetching preloaded data from: ${url}`);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          console.log(`No preloaded data found at ${url} (${response.status})`);
+          return null;
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        
+        // Find the JSON file in the zip (assumes single JSON file)
+        const jsonFileName = Object.keys(zip.files).find(name => name.endsWith('.json'));
+        
+        if (!jsonFileName) {
+          console.error('No JSON file found in zip archive');
+          return null;
+        }
+        
+        const jsonContent = await zip.file(jsonFileName).async('string');
+        return JSON.parse(jsonContent);
+      } catch (err) {
+        console.log('Could not fetch preloaded data:', err.message);
+        return null;
+      }
+    }
+
+    async function loadPreloadedData() {
+      let attemptedPreload = false;
+
+      try {
+        if (!PRELOADED_DATA) {
+          attemptedPreload = true;
+          setPreloadingState(true);
+          PRELOADED_DATA = await fetchPreloadedData();
+        }
+        
+        if (!PRELOADED_DATA || Object.keys(PRELOADED_DATA).length === 0) {
+          console.log('No preloaded data available');
+          isUsingPreloadedData = false;
+          renderEmptyState();
+          return false;
+        }
+
+        isUsingPreloadedData = true;
+
+        // Load the raw data arrays
+        jobRoleDescriptions = PRELOADED_DATA.jobRoleDescriptions || [];
+        jobRoleTcsCcs = PRELOADED_DATA.jobRoleTcsCcs || [];
+        tscKAndA = PRELOADED_DATA.tscKAndA || [];
+        tscToUnique = PRELOADED_DATA.tscToUnique || [];
+        uniqueSkillsList = PRELOADED_DATA.uniqueSkillsList || [];
+        jobRoleCwfKt = PRELOADED_DATA.jobRoleCwfKt || [];
+
+        // Mark workbooks as loaded (for UI status)
+        frameworkWb = { loaded: true };
+        tscMapWb = { loaded: true };
+        uniqueWb = { loaded: true };
+
+        // Update file status indicators
+        updateFileStatus(statusFramework, true);
+        updateFileStatus(statusTscMap, true);
+        updateFileStatus(statusUnique, true);
+
+        // Build the lookup maps
+        buildMaps();
+
+        // Populate the role list
+        populateRoleList();
+
+        // Update global status
+        updateGlobalStatus();
+        renderEmptyState();
+
+        console.log('✓ Preloaded data successfully!');
+        console.log(`  - ${jobRoleDescriptions.length} job role descriptions`);
+        console.log(`  - ${jobRoleTcsCcs.length} job role TSC/CCS entries`);
+        console.log(`  - ${tscKAndA.length} TSC K&A entries`);
+        console.log(`  - ${tscToUnique.length} TSC to unique mappings`);
+        console.log(`  - ${uniqueSkillsList.length} unique skills`);
+
+        return true;
+      } catch (err) {
+        console.error('Error loading preloaded data:', err);
+        isUsingPreloadedData = false;
+        renderEmptyState();
+        return false;
+      } finally {
+        if (attemptedPreload) {
+          setPreloadingState(false);
+        }
+      }
+    }
+
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    let frameworkWb = null;
+    let tscMapWb = null;
+    let uniqueWb = null;
+
+    let jobRoleDescriptions = [];
+    let jobRoleTcsCcs = [];
+    let tscKAndA = [];
+    let tscToUnique = [];
+    let uniqueSkillsList = [];
+    let jobRoleCwfKt = [];
+
+    let tscInfoByCode = new Map();
+    let tscMappingByCodeProf = new Map();
+    let tscMappingByCode = new Map();
+    let uniqueSkillByTitle = new Map();
+    let kAndAByCodeProf = new Map();
+    let roleCwfByKey = new Map();
+
+    let selectedRoleKeys = new Set();
+    let currentView = 'role';
+    let analysisResults = null;
+    let chipsExpanded = false;
+    let isPreloadingData = false;
+    let isUsingPreloadedData = false;
+    let hasAutoFocusedRoleSearch = false;
+
+    // Track currently selected skill element
+    let currentlySelectedSkillElement = null;
+    let currentlySelectedSkillKey = null;
+    let compareFilter = 'all';
+    let compareSelection = { role1: null, role2: null };
+    let openComparePicker = null;
+    let compareShowDescriptions = false;
+
+    let dragCounter = 0; // Track drag enter/leave for nested elements
+
+    // Mobile state
+    let isMobile = window.innerWidth <= 768;
+
+    // =========================================================================
+    // DOM ELEMENTS
+    // =========================================================================
+    const fileInput = document.getElementById('fileInput');
+    const fileUploadZone = document.getElementById('fileUploadZone');
+    const fileSectionContainer = document.getElementById('fileSectionContainer');
+    const fileSectionHeader = document.getElementById('fileSectionHeader');
+    const dropOverlay = document.getElementById('dropOverlay');
+    const statusFramework = document.getElementById('statusFramework');
+    const statusTscMap = document.getElementById('statusTscMap');
+    const statusUnique = document.getElementById('statusUnique');
+    const miniDot1 = document.getElementById('miniDot1');
+    const miniDot2 = document.getElementById('miniDot2');
+    const miniDot3 = document.getElementById('miniDot3');
+    const globalStatusDot = document.getElementById('globalStatusDot');
+    const globalStatusText = document.getElementById('globalStatusText');
+
+    const roleSearchInput = document.getElementById('roleSearchInput');
+    const sectorFilter = document.getElementById('sectorFilter');
+    const roleList = document.getElementById('roleList');
+
+    const selectedCount = document.getElementById('selectedCount');
+    const selectedChips = document.getElementById('selectedChips');
+    const selectedRolesExpandable = document.getElementById('selectedRolesExpandable');
+    const selectionExpandBtn = document.getElementById('selectionExpandBtn');
+    const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const selectionTray = document.getElementById('selectionTray');
+
+    const emptyState = document.getElementById('emptyState');
+    const preloadBanner = document.getElementById('preloadBanner');
+    const preloadBannerText = document.getElementById('preloadBannerText');
+    const emptyStateTitle = document.getElementById('emptyStateTitle');
+    const emptyStateText = document.getElementById('emptyStateText');
+    const emptyStateSteps = document.getElementById('emptyStateSteps');
+    const contentHeader = document.getElementById('contentHeader');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const contentBody = document.getElementById('contentBody');
+    const roleViewContainer = document.getElementById('roleViewContainer');
+    const compareContainer = document.getElementById('compareContainer');
+    const skillViewContainer = document.getElementById('skillViewContainer');
+    const roleCards = document.getElementById('roleCards');
+
+    const viewRoleBtn = document.getElementById('viewRoleBtn');
+    const viewCompareBtn = document.getElementById('viewCompareBtn');
+    const viewSkillBtn = document.getElementById('viewSkillBtn');
+
+    const detailPanel = document.getElementById('detailPanel');
+    const detailTitle = document.getElementById('detailTitle');
+    const detailBody = document.getElementById('detailBody');
+    const detailCloseBtn = document.getElementById('detailCloseBtn');
+
+    const statRoles = document.getElementById('statRoles');
+    const statUniqueSkills = document.getElementById('statUniqueSkills');
+
+    // Mobile elements
+    const sidebar = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const bottomNav = document.getElementById('bottomNav');
+
+    // =========================================================================
+    // UTILITIES
+    // =========================================================================
+    function safeStr(v) {
+      return (v === null || v === undefined) ? '' : String(v).trim();
+    }
+
+    function makeRoleKey(r) {
+      return safeStr(r['Sector']) + '|||' + safeStr(r['Track']) + '|||' + safeStr(r['Job Role']);
+    }
+
+    function parseRoleKey(key) {
+      const [sector, track, role] = key.split('|||');
+      return { sector, track, role };
+    }
+
+    function formatRoleLabel(roleData) {
+      const name = safeStr(roleData.role);
+      const track = safeStr(roleData.track);
+      return track ? `${name} · ${track}` : name;
+    }
+
+    function escapeHtml(str) {
+      return safeStr(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function uniqueBy(arr, keyFn) {
+      const seen = new Set();
+      const out = [];
+      for (const item of arr) {
+        const key = keyFn(item);
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(item);
+        }
+      }
+      return out;
+    }
+
+    function sheetToJsonIfExists(wb, sheetName) {
+      if (!wb.SheetNames.includes(sheetName)) return [];
+      const ws = wb.Sheets[sheetName];
+      return XLSX.utils.sheet_to_json(ws, { defval: null });
+    }
+
+    // Clear selected skill highlight
+    function clearSkillSelection() {
+      if (currentlySelectedSkillElement) {
+        currentlySelectedSkillElement.classList.remove('active');
+        currentlySelectedSkillElement = null;
+      }
+      currentlySelectedSkillKey = null;
+    }
+
+    function focusRoleSearchInput() {
+      if (hasAutoFocusedRoleSearch) return;
+      if (!roleSearchInput || !jobRoleDescriptions.length) return;
+      // Don't auto-focus on mobile (it causes keyboard to pop up)
+      if (isMobile) return;
+
+      hasAutoFocusedRoleSearch = true;
+      setTimeout(() => {
+        if (document.activeElement === roleSearchInput) return;
+        roleSearchInput.focus({ preventScroll: true });
+        roleSearchInput.select();
+      }, 0);
+    }
+
+    function renderEmptyState() {
+      if (!emptyStateText || !emptyStateSteps) return;
+
+      if (emptyStateTitle) {
+        emptyStateTitle.textContent = 'Ready to explore skills?';
+      }
+
+      if (isUsingPreloadedData) {
+        emptyStateText.textContent = 'Select job roles and analyse the technical skills and competencies required.';
+        emptyStateSteps.innerHTML = `
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-text">Select roles</div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-text">Analyse</div>
+          </div>
+        `;
+      } else {
+        emptyStateText.textContent = 'Upload your SkillsFuture XLSX files, select job roles, and analyse the technical skills and competencies required.';
+        emptyStateSteps.innerHTML = `
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-text">Upload files</div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-text">Select roles</div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-text">Analyse</div>
+          </div>
+        `;
+      }
+    }
+
+    function setPreloadingState(isLoading) {
+      isPreloadingData = isLoading;
+      if (isLoading) {
+        hasAutoFocusedRoleSearch = false;
+      }
+
+      if (emptyState) {
+        emptyState.classList.toggle('is-loading', isLoading);
+      }
+
+      if (fileSectionContainer) {
+        fileSectionContainer.classList.toggle('hidden', isLoading);
+      }
+
+      if (preloadBanner) {
+        preloadBanner.classList.toggle('hidden', !isLoading);
+      }
+      if (preloadBannerText) {
+        preloadBannerText.textContent = isLoading ? 'Loading data...' : 'Data ready';
+      }
+      updateGlobalStatus();
+    }
+
+    function setDefaultCompareSelection() {
+      if (!analysisResults || !analysisResults.roles) return;
+      const keys = Array.from(analysisResults.roles.keys());
+      compareSelection.role1 = keys[0] || null;
+      compareSelection.role2 = keys.find(k => k !== compareSelection.role1) || null;
+    }
+
+    // =========================================================================
+    // MOBILE FUNCTIONS
+    // =========================================================================
+    function openSidebar() {
+      sidebar.classList.add('open');
+      sidebarBackdrop.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarBackdrop.classList.remove('visible');
+      document.body.style.overflow = '';
+    }
+
+    function updateBottomNavActive(view) {
+      bottomNav.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.view === view) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    function checkMobile() {
+      isMobile = window.innerWidth <= 768;
+    }
+
+    // =========================================================================
+    // FILE UPLOAD & PARSING
+    // =========================================================================
+    function updateFileStatus(el, loaded, filename = '') {
+      el.classList.remove('loaded', 'missing');
+      el.classList.add(loaded ? 'loaded' : 'missing');
+      el.querySelector('.icon').textContent = loaded ? '✓' : '○';
+    }
+
+    function updateGlobalStatus() {
+      if (isPreloadingData) {
+        globalStatusDot.className = 'status-dot partial';
+        globalStatusText.textContent = 'Loading data...';
+        return;
+      }
+
+      const loadedCount = [frameworkWb, tscMapWb, uniqueWb].filter(Boolean).length;
+      
+      // Update mini dots
+      miniDot1.className = 'mini-dot' + (frameworkWb ? ' loaded' : '');
+      miniDot2.className = 'mini-dot' + (tscMapWb ? ' loaded' : '');
+      miniDot3.className = 'mini-dot' + (uniqueWb ? ' loaded' : '');
+
+      if (loadedCount === 0) {
+        globalStatusDot.className = 'status-dot';
+        globalStatusText.textContent = 'No files loaded';
+      } else if (loadedCount < 3) {
+        globalStatusDot.className = 'status-dot partial';
+        globalStatusText.textContent = `${loadedCount}/3 files loaded`;
+      } else {
+        globalStatusDot.className = 'status-dot loaded';
+        globalStatusText.textContent = 'All files loaded';
+        focusRoleSearchInput();
+        // Collapse file section when all loaded
+        fileSectionContainer.classList.remove('expanded');
+      }
+    }
+
+    async function handleFiles(files) {
+      isUsingPreloadedData = false;
+      hasAutoFocusedRoleSearch = false;
+      renderEmptyState();
+
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        let wb;
+        try {
+          wb = XLSX.read(buffer, { type: 'array' });
+        } catch (err) {
+          console.error('Error reading workbook', file.name, err);
+          continue;
+        }
+
+        const sheets = new Set(wb.SheetNames);
+
+        if (sheets.has('Job Role_Description') && sheets.has('Job Role_TCS_CCS')) {
+          frameworkWb = wb;
+          updateFileStatus(statusFramework, true, file.name);
+        } else if (sheets.has('TSC to Unique Skill Mapping')) {
+          tscMapWb = wb;
+          updateFileStatus(statusTscMap, true, file.name);
+        } else if (sheets.has('Unique Skills List')) {
+          uniqueWb = wb;
+          updateFileStatus(statusUnique, true, file.name);
+        }
+      }
+
+      loadDataFromWorkbooks();
+      buildMaps();
+      populateRoleList();
+      updateGlobalStatus();
+    }
+
+    function loadDataFromWorkbooks() {
+      if (frameworkWb) {
+        jobRoleDescriptions = sheetToJsonIfExists(frameworkWb, 'Job Role_Description');
+        jobRoleTcsCcs = sheetToJsonIfExists(frameworkWb, 'Job Role_TCS_CCS');
+        tscKAndA = sheetToJsonIfExists(frameworkWb, 'TSC_CCS_K&A');
+        jobRoleCwfKt = sheetToJsonIfExists(frameworkWb, 'Job Role_CWF_KT');
+      }
+      if (tscMapWb) {
+        tscToUnique = sheetToJsonIfExists(tscMapWb, 'TSC to Unique Skill Mapping');
+      }
+      if (uniqueWb) {
+        uniqueSkillsList = sheetToJsonIfExists(uniqueWb, 'Unique Skills List');
+      }
+    }
+
+    function buildMaps() {
+      tscInfoByCode.clear();
+      kAndAByCodeProf.clear();
+      roleCwfByKey.clear();
+
+      for (const row of tscKAndA) {
+        const type = safeStr(row['TSC_CCS Type']).toLowerCase();
+        const code = safeStr(row['TSC_CCS Code']);
+        if (!code) continue;
+
+        if (!tscInfoByCode.has(code) && type) {
+          tscInfoByCode.set(code, {
+            title: safeStr(row['TSC_CCS Title']),
+            description: safeStr(row['TSC_CCS Description']),
+            category: safeStr(row['TSC_CCS Category']),
+            sector: safeStr(row['Sector']),
+          });
+        }
+
+        const prof = safeStr(row['Proficiency Level']);
+        if (!prof) continue;
+
+        const key = code + '|' + prof;
+        let entry = kAndAByCodeProf.get(key);
+        if (!entry) {
+          entry = {
+            code,
+            proficiencyLevel: prof,
+            proficiencyDescription: '',
+            knowledgeItems: [],
+            abilityItems: [],
+          };
+          kAndAByCodeProf.set(key, entry);
+        }
+
+        const profDesc = safeStr(row['Proficiency Description']);
+        if (profDesc && !entry.proficiencyDescription) {
+          entry.proficiencyDescription = profDesc;
+        }
+
+        const item = safeStr(row['Knowledge / Ability Items']);
+        const klass = safeStr(row['Knowledge / Ability Classification']).toLowerCase();
+        if (item) {
+          if (klass.includes('knowledge')) {
+            entry.knowledgeItems.push(item);
+          } else if (klass.includes('ability')) {
+            entry.abilityItems.push(item);
+          } else {
+            entry.knowledgeItems.push(item);
+          }
+        } else {
+          entry.knowledgeItems.push(item);
+        }
+      }
+
+      // Build Critical Work Function & Key Tasks map per role
+      for (const row of jobRoleCwfKt) {
+        const roleKey = makeRoleKey(row);
+        if (!roleKey) continue;
+
+        const cwf = safeStr(row['Critical Work Function'] || row['Job Role_Critical Work Function'] || row['CWF']);
+        const keyTask = safeStr(row['Key Tasks'] || row['Key Task'] || row['Tasks']);
+        
+        if (!cwf && !keyTask) continue;
+
+        if (!roleCwfByKey.has(roleKey)) {
+          roleCwfByKey.set(roleKey, new Map());
+        }
+
+        const cwfMap = roleCwfByKey.get(roleKey);
+        if (!cwfMap.has(cwf)) {
+          cwfMap.set(cwf, new Set());
+        }
+
+        if (keyTask) {
+          cwfMap.get(cwf).add(keyTask);
+        }
+      }
+
+      uniqueSkillByTitle.clear();
+      for (const row of uniqueSkillsList) {
+        const title = safeStr(row['parent_skill_title']);
+        if (!title) continue;
+        if (!uniqueSkillByTitle.has(title)) {
+          uniqueSkillByTitle.set(title, row);
+        }
+      }
+
+      tscMappingByCodeProf.clear();
+      tscMappingByCode.clear();
+      for (const row of tscToUnique) {
+        const code = safeStr(row['tsc_code']);
+        if (!code) continue;
+        const prof = safeStr(row['proficiency_level']);
+        if (prof) {
+          const key = code + '|' + prof;
+          if (!tscMappingByCodeProf.has(key)) {
+            tscMappingByCodeProf.set(key, row);
+          }
+        }
+        if (!tscMappingByCode.has(code)) {
+          tscMappingByCode.set(code, row);
+        }
+      }
+    }
+
+    const selectAllIcons = {
+      empty: `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="4" y="4" width="16" height="16" rx="3" ry="3" stroke-width="2"></rect>
+          <path d="M8 11h8M8 15h5" stroke-width="2" stroke-linecap="round"></path>
+        </svg>
+      `,
+      filled: `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="4" y="4" width="16" height="16" rx="3" ry="3" stroke-width="2"></rect>
+          <path d="M8 12.5l3.2 3.1 4.8-7.2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      `
+    };
+
+    function setSelectAllIcon(btn, state, tooltipText) {
+      btn.classList.toggle('filled', state === 'filled');
+      btn.innerHTML = selectAllIcons[state] || selectAllIcons.empty;
+      const tooltip = tooltipText || (state === 'filled' ? 'Deselect all roles' : 'Select all roles');
+      btn.title = tooltip;
+      btn.setAttribute('aria-label', tooltip);
+      btn.dataset.tooltip = tooltip;
+    }
+
+    // =========================================================================
+    // ROLE LIST POPULATION
+    // =========================================================================
+    function populateRoleList() {
+      roleList.innerHTML = '';
+      sectorFilter.innerHTML = '<option value="">All Sectors</option>';
+
+      if (!jobRoleDescriptions.length) {
+        roleList.innerHTML = `
+          <div class="empty-state" style="padding: 1.5rem 0.75rem;">
+            <div style="font-size: 1.5rem; opacity: 0.5; margin-bottom: 0.375rem;">📋</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Upload files to see roles</div>
+          </div>
+        `;
+        return;
+      }
+
+      const uniqueRoles = uniqueBy(jobRoleDescriptions, r => makeRoleKey(r));
+      
+      const sectorGroups = new Map();
+      for (const row of uniqueRoles) {
+        const sector = safeStr(row['Sector']) || 'Unknown Sector';
+        if (!sectorGroups.has(sector)) {
+          sectorGroups.set(sector, []);
+        }
+        sectorGroups.get(sector).push(row);
+      }
+
+      const sortedSectors = Array.from(sectorGroups.keys()).sort();
+      for (const sector of sortedSectors) {
+        const opt = document.createElement('option');
+        opt.value = sector;
+        opt.textContent = sector;
+        sectorFilter.appendChild(opt);
+      }
+
+      for (const sector of sortedSectors) {
+        const roles = sectorGroups.get(sector);
+        roles.sort((a, b) => safeStr(a['Job Role']).localeCompare(safeStr(b['Job Role'])));
+
+        const groupEl = document.createElement('div');
+        groupEl.className = 'sector-group';
+        groupEl.dataset.sector = sector;
+
+        const headerEl = document.createElement('div');
+        headerEl.className = 'sector-header';
+        headerEl.innerHTML = `
+          <span class="chevron">▶</span>
+          <span class="sector-name">${escapeHtml(sector)}</span>
+          <div class="sector-header-actions">
+            <button class="sector-select-all" type="button" aria-label="Select all roles" title="Select all roles"></button>
+            <span class="count">${roles.length}</span>
+          </div>
+        `;
+        headerEl.addEventListener('click', () => {
+          groupEl.classList.toggle('expanded');
+          headerEl.classList.toggle('expanded');
+        });
+
+        const rolesEl = document.createElement('div');
+        rolesEl.className = 'sector-roles';
+
+        for (const role of roles) {
+          const roleKey = makeRoleKey(role);
+          const roleName = safeStr(role['Job Role']);
+
+          const roleEl = document.createElement('div');
+          roleEl.className = 'role-item';
+          roleEl.dataset.roleKey = roleKey;
+          roleEl.dataset.roleName = roleName.toLowerCase();
+          roleEl.dataset.sector = sector.toLowerCase();
+
+          const trackName = safeStr(role['Track']);
+          roleEl.innerHTML = `
+            <div class="role-checkbox"><span class="check">✓</span></div>
+            <div class="role-name-wrapper" style="display: flex; flex-direction: column; gap: 0.125rem;">
+              <span class="role-name">${escapeHtml(roleName)}</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted);">${escapeHtml(trackName)}</span>
+            </div>
+          `;
+
+          roleEl.addEventListener('click', () => toggleRoleSelection(roleKey, roleEl));
+          rolesEl.appendChild(roleEl);
+        }
+
+        const selectAllBtn = headerEl.querySelector('.sector-select-all');
+        setSelectAllIcon(selectAllBtn, 'empty');
+        selectAllBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectVisibleRolesInGroup(groupEl);
+        });
+
+        groupEl.appendChild(headerEl);
+        groupEl.appendChild(rolesEl);
+        roleList.appendChild(groupEl);
+      }
+
+      updateSectorSelectAllButtons();
+    }
+
+    function toggleRoleSelection(roleKey, roleEl) {
+      if (selectedRoleKeys.has(roleKey)) {
+        selectedRoleKeys.delete(roleKey);
+        roleEl.classList.remove('selected');
+      } else {
+        selectedRoleKeys.add(roleKey);
+        roleEl.classList.add('selected');
+      }
+      updateSelectionTray();
+    }
+
+    function updateSelectionTray() {
+      selectedCount.textContent = selectedRoleKeys.size;
+      analyzeBtn.disabled = selectedRoleKeys.size === 0;
+      
+      // Update expand button text
+      selectionExpandBtn.textContent = chipsExpanded ? 'Hide ▼' : 'View ▲';
+      selectionExpandBtn.style.display = selectedRoleKeys.size > 0 ? 'inline-block' : 'none';
+
+      // Mobile: toggle has-selection class for tray visibility
+      if (selectedRoleKeys.size > 0) {
+        selectionTray.classList.add('has-selection');
+      } else {
+        selectionTray.classList.remove('has-selection');
+      }
+
+      selectedChips.innerHTML = '';
+
+      // Count roles to decide when track disambiguation is needed
+      const roleCounts = new Map();
+      for (const key of selectedRoleKeys) {
+        const { role } = parseRoleKey(key);
+        roleCounts.set(role, (roleCounts.get(role) || 0) + 1);
+      }
+
+      for (const key of selectedRoleKeys) {
+        const { role, track } = parseRoleKey(key);
+        const showTrack = (roleCounts.get(role) || 0) > 1 && track;
+        const chip = document.createElement('span');
+        chip.className = 'selected-chip';
+        chip.innerHTML = `
+          <span>${escapeHtml(role)}${showTrack ? ` <span style="opacity: 0.7; font-size: 0.6rem;">(${escapeHtml(track)})</span>` : ''}</span>
+          <span class="remove" data-key="${escapeHtml(key)}">×</span>
+        `;
+        chip.querySelector('.remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          removeRoleSelection(key);
+        });
+        selectedChips.appendChild(chip);
+      }
+
+      updateSectorSelectAllButtons();
+    }
+
+    function removeRoleSelection(key) {
+      selectedRoleKeys.delete(key);
+      const roleEl = document.querySelector(`.role-item[data-role-key="${CSS.escape(key)}"]`);
+      if (roleEl) {
+        roleEl.classList.remove('selected');
+      }
+      updateSelectionTray();
+    }
+
+    function clearAllSelections() {
+      selectedRoleKeys.clear();
+      document.querySelectorAll('.role-item.selected').forEach(el => el.classList.remove('selected'));
+      updateSelectionTray();
+    }
+
+    function toggleChipsExpanded() {
+      chipsExpanded = !chipsExpanded;
+      selectedRolesExpandable.classList.toggle('expanded', chipsExpanded);
+      selectionExpandBtn.textContent = chipsExpanded ? 'Hide ▼' : 'View ▲';
+    }
+
+    function selectVisibleRolesInGroup(groupEl) {
+      const roleEls = Array.from(groupEl.querySelectorAll('.role-item')).filter(el => !el.classList.contains('hidden'));
+      if (!roleEls.length) return;
+
+      const allVisibleSelected = roleEls.every(el => selectedRoleKeys.has(el.dataset.roleKey));
+      const shouldSelect = !allVisibleSelected;
+
+      for (const roleEl of roleEls) {
+        const key = roleEl.dataset.roleKey;
+        if (shouldSelect) {
+          selectedRoleKeys.add(key);
+          roleEl.classList.add('selected');
+        } else {
+          selectedRoleKeys.delete(key);
+          roleEl.classList.remove('selected');
+        }
+      }
+
+      updateSelectionTray();
+    }
+
+    function updateSectorSelectAllButtons() {
+      document.querySelectorAll('.sector-group').forEach(groupEl => {
+        const btn = groupEl.querySelector('.sector-select-all');
+        if (!btn) return;
+
+        const visibleRoles = Array.from(groupEl.querySelectorAll('.role-item')).filter(roleEl => !roleEl.classList.contains('hidden'));
+        if (!visibleRoles.length) {
+          setSelectAllIcon(btn, 'empty', 'Select all roles');
+          btn.disabled = true;
+          btn.classList.remove('always-visible');
+          return;
+        }
+
+        btn.disabled = false;
+        const allVisibleSelected = visibleRoles.every(roleEl => selectedRoleKeys.has(roleEl.dataset.roleKey));
+        if (allVisibleSelected) {
+          setSelectAllIcon(btn, 'filled', 'Deselect all roles');
+          btn.classList.add('always-visible');
+        } else {
+          setSelectAllIcon(btn, 'empty', 'Select all roles');
+          btn.classList.remove('always-visible');
+        }
+      });
+    }
+
+    // =========================================================================
+    // FILTERING
+    // =========================================================================
+    function applyFilters() {
+      const query = roleSearchInput.value.trim().toLowerCase();
+      const selectedSector = sectorFilter.value;
+
+      document.querySelectorAll('.sector-group').forEach(groupEl => {
+        const sector = groupEl.dataset.sector;
+        const matchesSector = !selectedSector || sector === selectedSector;
+
+        if (!matchesSector) {
+          groupEl.classList.add('hidden');
+          return;
+        }
+
+        let hasVisibleRoles = false;
+        groupEl.querySelectorAll('.role-item').forEach(roleEl => {
+          const roleName = roleEl.dataset.roleName;
+          const roleSector = roleEl.dataset.sector;
+          const matchesQuery = !query || roleName.includes(query) || roleSector.includes(query);
+
+          if (matchesQuery) {
+            roleEl.classList.remove('hidden');
+            hasVisibleRoles = true;
+          } else {
+            roleEl.classList.add('hidden');
+          }
+        });
+
+        if (hasVisibleRoles) {
+          groupEl.classList.remove('hidden');
+          if (query) {
+            groupEl.classList.add('expanded');
+            groupEl.querySelector('.sector-header').classList.add('expanded');
+          }
+        } else {
+          groupEl.classList.add('hidden');
+        }
+      });
+
+      updateSectorSelectAllButtons();
+    }
+
+    // =========================================================================
+    // ANALYSIS
+    // =========================================================================
+    function runAnalysis() {
+      if (selectedRoleKeys.size === 0) return;
+
+      // Close sidebar on mobile after analysis
+      if (isMobile) {
+        closeSidebar();
+      }
+
+      const keySet = selectedRoleKeys;
+      const roles = jobRoleDescriptions.filter(r => keySet.has(makeRoleKey(r)));
+      const tscRows = jobRoleTcsCcs.filter(r => keySet.has(makeRoleKey(r)));
+
+      const roleAnalysis = new Map();
+      const allUniqueSkills = new Map();
+      let totalTscCount = 0;
+
+      for (const roleKey of keySet) {
+        const { sector, track, role } = parseRoleKey(roleKey);
+        const roleDesc = roles.find(r => makeRoleKey(r) === roleKey);
+        const roleTscs = tscRows.filter(r => makeRoleKey(r) === roleKey);
+        const cwfMap = roleCwfByKey.get(roleKey);
+
+        const uniqueSkillsMap = new Map();
+        const tscList = [];
+        const cwfList = [];
+
+        if (cwfMap && cwfMap.size) {
+          for (const [cwfTitle, tasksSet] of cwfMap.entries()) {
+            cwfList.push({
+              title: cwfTitle || 'Critical Work Function',
+              tasks: Array.from(tasksSet || [])
+            });
+          }
+          cwfList.sort((a, b) => a.title.localeCompare(b.title));
+        }
+
+        for (const tsc of roleTscs) {
+          const code = safeStr(tsc['TSC_CCS Code']);
+          const prof = safeStr(tsc['Proficiency Level']);
+          const type = safeStr(tsc['TSC_CCS Type']);
+          const info = tscInfoByCode.get(code) || {};
+
+          const mappingKey = code && prof ? (code + '|' + prof) : null;
+          const mapping = mappingKey && tscMappingByCodeProf.has(mappingKey)
+            ? tscMappingByCodeProf.get(mappingKey)
+            : tscMappingByCode.get(code);
+
+          const parentSkillTitle = mapping ? safeStr(mapping['parent_skill_title']) : '';
+          const skillType = mapping ? safeStr(mapping['skill_type']) : '';
+          const isEmerging = mapping && mapping['Emerging Skills'];
+          const isCasl = mapping && mapping['CASL Skills'];
+
+          const kAndAKey = code + '|' + prof;
+          const kAndA = kAndAByCodeProf.get(kAndAKey);
+
+          const tscData = {
+            code,
+            title: info.title || code,
+            type,
+            proficiency: prof,
+            proficiencyDescription: kAndA ? kAndA.proficiencyDescription : '',
+            knowledgeItems: kAndA ? kAndA.knowledgeItems : [],
+            abilityItems: kAndA ? kAndA.abilityItems : [],
+            category: info.category || '',
+            parentSkillTitle,
+            skillType,
+            isEmerging,
+            isCasl
+          };
+
+          tscList.push(tscData);
+          totalTscCount++;
+
+          if (parentSkillTitle) {
+            if (!uniqueSkillsMap.has(parentSkillTitle)) {
+              const uniqueRow = uniqueSkillByTitle.get(parentSkillTitle);
+              uniqueSkillsMap.set(parentSkillTitle, {
+                title: parentSkillTitle,
+                description: uniqueRow ? safeStr(uniqueRow['parent_skill_description']) : '',
+                skillType,
+                isEmerging,
+                isCasl,
+                proficiencies: new Map(), // Changed to Map to store per-level data
+                tscs: new Map()
+              });
+            }
+            
+            // Store TSC data per proficiency level
+            const skillEntry = uniqueSkillsMap.get(parentSkillTitle);
+            if (!skillEntry.proficiencies.has(prof)) {
+              skillEntry.proficiencies.set(prof, {
+                level: prof,
+                proficiencyDescription: tscData.proficiencyDescription,
+                knowledgeItems: new Set(),
+                abilityItems: new Set(),
+                tscs: new Map()
+              });
+            }
+            const profEntry = skillEntry.proficiencies.get(prof);
+            tscData.knowledgeItems.forEach(k => profEntry.knowledgeItems.add(k));
+            tscData.abilityItems.forEach(a => profEntry.abilityItems.add(a));
+            profEntry.tscs.set(tscData.code, tscData);
+
+            skillEntry.tscs.set(tscData.code + '|' + tscData.proficiency, tscData);
+
+            if (!allUniqueSkills.has(parentSkillTitle)) {
+              allUniqueSkills.set(parentSkillTitle, {
+                title: parentSkillTitle,
+                description: uniqueSkillByTitle.get(parentSkillTitle)?.['parent_skill_description'] || '',
+                roles: [],
+                proficiencies: new Map()
+              });
+            }
+            const globalSkill = allUniqueSkills.get(parentSkillTitle);
+            const existingRole = globalSkill.roles.find(r => r.key === roleKey);
+            if (!existingRole) {
+              globalSkill.roles.push({
+                key: roleKey,
+                name: role,
+                sector,
+                track,
+                proficiency: prof,
+                proficiencies: new Set([prof])
+              });
+            } else {
+              existingRole.proficiencies.add(prof);
+            }
+            
+            // Also store proficiency data globally
+            if (!globalSkill.proficiencies.has(prof)) {
+              globalSkill.proficiencies.set(prof, {
+                level: prof,
+                proficiencyDescription: tscData.proficiencyDescription,
+                knowledgeItems: new Set(),
+                abilityItems: new Set(),
+                tscs: new Map()
+              });
+            }
+            const globalProfEntry = globalSkill.proficiencies.get(prof);
+            tscData.knowledgeItems.forEach(k => globalProfEntry.knowledgeItems.add(k));
+            tscData.abilityItems.forEach(a => globalProfEntry.abilityItems.add(a));
+            globalProfEntry.tscs.set(tscData.code, tscData);
+          }
+        }
+
+        roleAnalysis.set(roleKey, {
+          role,
+          sector,
+          track,
+          description: roleDesc ? safeStr(roleDesc['Job Role Description']) : '',
+          performance: roleDesc ? safeStr(roleDesc['Performance Expectation']) : '',
+          cwf: cwfList,
+          uniqueSkills: Array.from(uniqueSkillsMap.values()),
+          tscs: tscList
+        });
+      }
+
+      analysisResults = {
+        roles: roleAnalysis,
+        uniqueSkills: allUniqueSkills,
+        totalRoles: roles.length,
+        totalUniqueSkills: allUniqueSkills.size,
+        totalTscs: totalTscCount
+      };
+
+      setDefaultCompareSelection();
+
+      statRoles.textContent = analysisResults.totalRoles;
+      statUniqueSkills.textContent = analysisResults.totalUniqueSkills;
+
+      document.querySelector('.content-title').setAttribute('data-role-count', analysisResults.totalRoles);
+
+      emptyState.classList.add('hidden');
+      resultsContainer.classList.remove('hidden');
+
+      // Clear any previous selection
+      clearSkillSelection();
+      closeDetailPanel();
+
+      // Update bottom nav to show analysis as active
+      updateBottomNavActive('role');
+
+      renderCurrentView();
+    }
+
+    // =========================================================================
+    // VIEW RENDERING
+    // =========================================================================
+    function renderCurrentView() {
+      if (!analysisResults) return;
+
+      // Clear selection when switching views
+      clearSkillSelection();
+      closeDetailPanel();
+
+      // CRITICAL FIX: Properly hide/show view containers
+      roleViewContainer.classList.remove('active');
+      compareContainer.classList.remove('active');
+      skillViewContainer.classList.remove('active');
+
+      // Update desktop view toggle buttons
+      viewRoleBtn.classList.remove('active');
+      viewCompareBtn.classList.remove('active');
+      viewSkillBtn.classList.remove('active');
+
+      // Hide the analysis header in compare view
+      if (contentHeader) {
+        if (currentView === 'compare') {
+          contentHeader.classList.add('hidden');
+        } else {
+          contentHeader.classList.remove('hidden');
+        }
+      }
+
+      switch (currentView) {
+        case 'role':
+          roleViewContainer.classList.add('active');
+          viewRoleBtn.classList.add('active');
+          renderRoleView();
+          break;
+        case 'compare':
+          compareContainer.classList.add('active');
+          viewCompareBtn.classList.add('active');
+          renderCompareView();
+          break;
+        case 'skill':
+          skillViewContainer.classList.add('active');
+          viewSkillBtn.classList.add('active');
+          renderSkillView();
+          break;
+      }
+
+      // Update bottom nav
+      updateBottomNavActive(currentView);
+    }
+
+    function renderRoleView() {
+      roleCards.innerHTML = '';
+      const autoExpandSingleRole = analysisResults.totalRoles === 1;
+
+      for (const [roleKey, data] of analysisResults.roles) {
+        const card = document.createElement('div');
+        card.className = 'role-card fade-in';
+
+        const sortedSkills = data.uniqueSkills
+          .slice()
+          .sort((a, b) => safeStr(a.title).localeCompare(safeStr(b.title)));
+
+        const cwfHtml = (data.cwf && data.cwf.length) ? `
+          <div class="cwf-card">
+            <div class="cwf-header">
+              <div class="cwf-title">🗂️ Critical Work Functions</div>
+              <button class="cwf-toggle" type="button">Show</button>
+            </div>
+            <div class="cwf-body">
+              ${data.cwf.map(cwf => `
+                <div class="cwf-item">
+                  <div class="cwf-item-title">${escapeHtml(cwf.title)}</div>
+                  ${(cwf.tasks || []).map(task => `
+                    <div class="cwf-task">${escapeHtml(task)}</div>
+                  `).join('')}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : '';
+
+        // Only show unique skills section, no TSC list in middle panel
+        card.innerHTML = `
+          <div class="role-card-header">
+            <div class="role-card-info">
+              <div class="role-card-title">
+                ${escapeHtml(data.role)}
+                ${data.uniqueSkills.some(s => s.isEmerging) ? '<span class="badge badge-warning">Emerging</span>' : ''}
+              </div>
+              <div class="role-card-meta">${escapeHtml(data.sector)} · ${escapeHtml(data.track)}</div>
+            </div>
+            <div class="role-card-badges">
+              <span class="badge badge-primary">${data.uniqueSkills.length} skills</span>
+            </div>
+            <span class="role-card-toggle">▼</span>
+          </div>
+          <div class="role-card-body">
+            <div class="skills-section">
+              ${cwfHtml}
+              <div class="skills-section-title">
+                <span>💡</span>
+                <span>Skills</span>
+              </div>
+              <div class="skills-grid">
+                ${sortedSkills.map(skill => `
+                  <div class="skill-row" data-skill-title="${escapeHtml(skill.title)}" data-role-key="${escapeHtml(roleKey)}">
+                    <div class="skill-row-content">
+                      <div class="skill-row-title">${escapeHtml(skill.title)}</div>
+                    </div>
+                    <div class="skill-row-badges">
+                      ${Array.from(skill.proficiencies.keys()).sort().map(p => `
+                        <span class="proficiency-badge">${escapeHtml(p)}</span>
+                      `).join('')}
+                    </div>
+                    <span class="skill-row-arrow">→</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (autoExpandSingleRole) {
+          card.classList.add('expanded');
+        }
+
+        const header = card.querySelector('.role-card-header');
+        header.addEventListener('click', () => {
+          card.classList.toggle('expanded');
+        });
+
+        const cwfToggle = card.querySelector('.cwf-toggle');
+        const cwfBody = card.querySelector('.cwf-body');
+        if (cwfToggle && cwfBody) {
+          const toggleVisible = () => {
+            const isVisible = cwfBody.classList.toggle('visible');
+            cwfToggle.textContent = isVisible ? 'Hide' : 'Show';
+          };
+          cwfToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleVisible();
+          });
+          // Default to collapsed
+          cwfBody.classList.remove('visible');
+        }
+
+        card.querySelectorAll('.skill-row').forEach(row => {
+          row.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const skillTitle = row.dataset.skillTitle;
+            const rKey = row.dataset.roleKey;
+            
+            // Clear previous selection and set new one
+            clearSkillSelection();
+            row.classList.add('active');
+            currentlySelectedSkillElement = row;
+            currentlySelectedSkillKey = skillTitle + '|' + rKey;
+            
+            showSkillDetail(skillTitle, rKey);
+          });
+        });
+
+        roleCards.appendChild(card);
+      }
+    }
+
+    function renderCompareView() {
+      const compareContent = document.getElementById('compareContent');
+      clearSkillSelection();
+      closeDetailPanel();
+      openComparePicker = null;
+
+      if (analysisResults.totalRoles < 2) {
+        compareContent.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⚖️</div>
+            <div class="empty-state-title">Select at least 2 roles to compare</div>
+            <div class="empty-state-text">
+              Choose two roles to see all shared and unique skills side by side.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const roleOptions = Array.from(analysisResults.roles.entries())
+        .map(([key, data]) => ({
+          key,
+          label: formatRoleLabel(data),
+          role: data
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      if (!compareSelection.role1 || !analysisResults.roles.has(compareSelection.role1)) {
+        compareSelection.role1 = roleOptions[0]?.key || null;
+      }
+      if (!compareSelection.role2 || !analysisResults.roles.has(compareSelection.role2) || compareSelection.role2 === compareSelection.role1) {
+        compareSelection.role2 = roleOptions.find(o => o.key !== compareSelection.role1)?.key || null;
+      }
+
+      let role1Key = compareSelection.role1;
+      let role2Key = compareSelection.role2;
+
+      if (!role1Key || !analysisResults.roles.has(role1Key)) {
+        role1Key = roleOptions[0]?.key || null;
+      }
+      if (!role2Key || !analysisResults.roles.has(role2Key) || role2Key === role1Key) {
+        role2Key = roleOptions.find(o => o.key !== role1Key)?.key || role2Key;
+      }
+
+      compareSelection.role1 = role1Key;
+      compareSelection.role2 = role2Key;
+
+      const role1 = analysisResults.roles.get(role1Key);
+      const role2 = analysisResults.roles.get(role2Key);
+      if (!role1 || !role2) return;
+
+      const role1Label = formatRoleLabel(role1);
+      const role2Label = formatRoleLabel(role2);
+
+      const skills1 = new Map();
+      const skills2 = new Map();
+      
+      for (const skill of role1.uniqueSkills) {
+        skills1.set(skill.title, skill);
+      }
+      for (const skill of role2.uniqueSkills) {
+        skills2.set(skill.title, skill);
+      }
+
+      const sharedSkills = [];
+      const allSkillTitles = Array.from(new Set([
+        ...Array.from(skills1.keys()),
+        ...Array.from(skills2.keys())
+      ])).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+      for (const title of allSkillTitles) {
+        const skill1 = skills1.get(title) || null;
+        const skill2 = skills2.get(title) || null;
+        sharedSkills.push({
+          title,
+          skill1,
+          skill2,
+          prof1: skill1 ? Array.from(skill1.proficiencies.keys()).map(n => parseInt(n)).sort((a, b) => a - b) : [],
+          prof2: skill2 ? Array.from(skill2.proficiencies.keys()).map(n => parseInt(n)).sort((a, b) => a - b) : []
+        });
+      }
+
+      compareContent.innerHTML = `
+        <div class="compare-header">
+          <div class="compare-meta">
+            <div style="font-weight: 700; color: var(--text-primary);">Comparing</div>
+            <div class="compare-pill role1 selectable" data-slot="role1" title="Click to change role">
+              <span class="dot"></span>
+              <span class="role-name">${escapeHtml(role1Label)}</span>
+              <span class="caret">▼</span>
+            </div>
+            <span style="font-weight: 600; color: var(--text-muted);">vs</span>
+            <div class="compare-pill role2 selectable" data-slot="role2" title="Click to change role">
+            <span class="dot"></span>
+            <span class="role-name">${escapeHtml(role2Label)}</span>
+            <span class="caret">▼</span>
+          </div>
+          </div>
+        </div>
+
+        <div class="compare-filter">
+          <button class="filter-btn ${compareFilter === 'all' ? 'active' : ''}" data-filter="all">All</button>
+          <button class="filter-btn ${compareFilter === 'shared' ? 'active' : ''}" data-filter="shared">Common Skills</button>
+          <button class="filter-btn ${compareFilter === 'diff' ? 'active' : ''}" data-filter="diff">Only Gaps</button>
+          <button class="filter-btn ${compareFilter === 'role1' ? 'active' : ''}" data-filter="role1" title="Only in ${escapeHtml(role1Label)}" aria-label="Only in ${escapeHtml(role1Label)}">Only in <span class="filter-dot role1" aria-hidden="true"></span> Role</button>
+          <button class="filter-btn ${compareFilter === 'role2' ? 'active' : ''}" data-filter="role2" title="Only in ${escapeHtml(role2Label)}" aria-label="Only in ${escapeHtml(role2Label)}">Only in <span class="filter-dot role2" aria-hidden="true"></span> Role</button>
+          <button class="compare-toggle ${compareShowDescriptions ? 'active' : ''}" id="compareDescToggle">
+            <span class="toggle-dot"></span>
+            <span>${compareShowDescriptions ? 'Hide' : 'Show'} details</span>
+          </button>
+        </div>
+
+        <div class="compare-table">
+          <div class="compare-table-head">
+            <div>Skill</div>
+            <div class="compare-role-header"><span class="filter-dot role1" aria-hidden="true"></span><span>${escapeHtml(role1Label)}</span></div>
+            <div class="compare-role-header"><span class="filter-dot role2" aria-hidden="true"></span><span>${escapeHtml(role2Label)}</span></div>
+          </div>
+          ${sharedSkills
+            .filter(skill => {
+              if (compareFilter === 'shared') return skill.skill1 && skill.skill2;
+              if (compareFilter === 'role1') return skill.skill1 && !skill.skill2;
+              if (compareFilter === 'role2') return skill.skill2 && !skill.skill1;
+              if (compareFilter === 'diff') {
+                const onlyOne = (skill.skill1 && !skill.skill2) || (!skill.skill1 && skill.skill2);
+                const both = skill.skill1 && skill.skill2;
+                const levelDiff = both && skill.prof1.length && skill.prof2.length
+                  ? Math.max(...skill.prof1) !== Math.max(...skill.prof2)
+                  : false;
+                return onlyOne || levelDiff;
+              }
+              return true;
+            })
+            .map(skill => {
+            const hasBoth = skill.skill1 && skill.skill2;
+            const max1 = skill.prof1.length ? Math.max(...skill.prof1) : null;
+            const max2 = skill.prof2.length ? Math.max(...skill.prof2) : null;
+            const hasDiff = hasBoth && max1 !== max2;
+            const highlight1 = hasDiff && max1 > max2;
+            const highlight2 = hasDiff && max2 > max1;
+            const showDescriptions = compareShowDescriptions && (!hasBoth || max1 !== max2);
+
+            const buildLevelEntries = (skillObj, side, highlightLevel, otherSkillObj) => {
+              if (!skillObj) {
+                return `<div class="compare-level-entry"><span class="compare-level-circle">–</span>${showDescriptions ? '<span class="compare-level-desc"></span>' : ''}</div>`;
+              }
+              const entries = Array.from(skillObj.proficiencies.entries())
+                .map(([lvl, data]) => ({
+                  level: parseInt(lvl, 10) || lvl,
+                  desc: safeStr(data?.proficiencyDescription)
+                }))
+                .sort((a, b) => {
+                  const an = typeof a.level === 'number';
+                  const bn = typeof b.level === 'number';
+                  if (an && bn) return b.level - a.level;
+                  if (an) return -1;
+                  if (bn) return 1;
+                  return safeStr(b.level).localeCompare(safeStr(a.level));
+                });
+
+              if (!entries.length) {
+                return `<div class="compare-level-entry"><span class="compare-level-circle">–</span>${showDescriptions ? '<span class="compare-level-desc"></span>' : ''}</div>`;
+              }
+
+              // If both sides share the same top level, skip showing descriptions for that level.
+              const topOther = otherSkillObj ? Array.from(otherSkillObj.proficiencies.keys()).map(n => parseInt(n, 10) || n).sort((a, b) => b - a)[0] : null;
+
+              return entries.map(entry => {
+                const shouldShowDesc = showDescriptions && (topOther === null || entry.level !== topOther);
+                return `
+                <div class="compare-level-entry">
+                  <span class="compare-level-circle ${side} ${highlightLevel && entry.level === highlightLevel ? 'highlight' : ''}">${escapeHtml(entry.level)}</span>
+                  ${shouldShowDesc ? `<span class="compare-level-desc">${escapeHtml(entry.desc || 'No description provided.')}</span>` : ''}
+                </div>
+              `;
+              }).join('');
+            };
+
+            const levelEntries1 = buildLevelEntries(skill.skill1, 'role1', highlight1 ? max1 : null, skill.skill2);
+            const levelEntries2 = buildLevelEntries(skill.skill2, 'role2', highlight2 ? max2 : null, skill.skill1);
+            return `
+              <div class="compare-row" data-skill-title="${escapeHtml(skill.title)}" data-role1-key="${escapeHtml(role1Key)}" data-role2-key="${escapeHtml(role2Key)}">
+                <div class="compare-skill">
+                  <div class="compare-skill-name">${escapeHtml(skill.title)}</div>
+                </div>
+                <div class="compare-levels-row">
+                  <div class="compare-level">
+                    <div class="compare-levels ${skill.skill1 ? '' : 'empty'} ${compareShowDescriptions && showDescriptions ? '' : 'compact'}">${levelEntries1}</div>
+                  </div>
+                  <div class="compare-level-vs">vs</div>
+                  <div class="compare-level">
+                    <div class="compare-levels ${skill.skill2 ? '' : 'empty'} ${compareShowDescriptions && showDescriptions ? '' : 'compact'}">${levelEntries2}</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      const closePopovers = () => {
+        compareContent.querySelectorAll('.compare-picker-popover').forEach(el => el.remove());
+        openComparePicker = null;
+      };
+
+      const handleOutsideClick = (event) => {
+        if (!event.target.closest('.compare-pill.selectable') && !event.target.closest('.compare-picker-popover')) {
+          closePopovers();
+        }
+      };
+
+      const openPopoverFor = (slot, pillEl) => {
+        closePopovers();
+        openComparePicker = slot;
+        const popover = document.createElement('div');
+        popover.className = 'compare-picker-popover';
+        popover.innerHTML = roleOptions.map(opt => `
+          <button class="compare-picker-option ${opt.key === compareSelection[slot] ? 'selected' : ''}" data-key="${escapeHtml(opt.key)}">
+            <span class="role-label">${escapeHtml(opt.label)}</span>
+            <span class="role-meta">${escapeHtml(safeStr(opt.role.sector) || '—')}${safeStr(opt.role.track) ? ' · ' + escapeHtml(safeStr(opt.role.track)) : ''}</span>
+          </button>
+        `).join('');
+        pillEl.appendChild(popover);
+
+        popover.querySelectorAll('.compare-picker-option').forEach(btn => {
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const key = btn.dataset.key;
+            const otherSlot = slot === 'role1' ? 'role2' : 'role1';
+            const otherKey = compareSelection[otherSlot];
+            const currentKey = compareSelection[slot];
+
+            compareSelection[slot] = key;
+            if (key === otherKey) {
+              const fallback = roleOptions.find(o => o.key !== key)?.key || currentKey;
+              compareSelection[otherSlot] = fallback;
+            }
+
+            openComparePicker = null;
+            renderCompareView();
+          });
+        });
+
+        setTimeout(() => document.addEventListener('click', handleOutsideClick, { once: true }), 0);
+      };
+
+      compareContent.querySelectorAll('.compare-pill.selectable').forEach(pill => {
+        pill.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const slot = pill.dataset.slot;
+          if (openComparePicker === slot) {
+            closePopovers();
+            return;
+          }
+          openPopoverFor(slot, pill);
+        });
+      });
+
+      compareContent.querySelectorAll('.compare-row').forEach(row => {
+        row.addEventListener('click', () => {
+          clearSkillSelection();
+          row.classList.add('active');
+          currentlySelectedSkillElement = row;
+
+          const skillTitle = row.dataset.skillTitle;
+          const r1 = row.dataset.role1Key;
+          const r2 = row.dataset.role2Key;
+
+          showCompareSkillDetail(skillTitle, r1, r2);
+        });
+      });
+
+      compareContent.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          compareFilter = btn.dataset.filter;
+          renderCompareView();
+        });
+      });
+
+      const descToggle = document.getElementById('compareDescToggle');
+      if (descToggle) {
+        descToggle.addEventListener('click', () => {
+          compareShowDescriptions = !compareShowDescriptions;
+          renderCompareView();
+        });
+      }
+    }
+
+    function renderSkillView() {
+      const skillResults = document.getElementById('skillResults');
+      const skillSearchInput = document.getElementById('skillSearchInput');
+      const query = skillSearchInput.value.toLowerCase().trim();
+
+      const skills = Array.from(analysisResults.uniqueSkills.values())
+        .filter(s => !query || s.title.toLowerCase().includes(query))
+        .sort((a, b) => safeStr(a.title).localeCompare(safeStr(b.title)));
+
+      skillResults.innerHTML = skills.map(skill => {
+        // Collect all proficiency levels from all roles
+        const allProficiencies = new Set();
+        skill.roles.forEach(r => {
+          if (r.proficiencies) {
+            r.proficiencies.forEach(p => allProficiencies.add(p));
+          } else if (r.proficiency) {
+            allProficiencies.add(r.proficiency);
+          }
+        });
+        const profLevels = Array.from(allProficiencies).sort();
+        
+        return `
+          <div class="skill-result-card" data-skill-title="${escapeHtml(skill.title)}">
+            <div class="skill-result-header">
+              <div class="skill-result-info">
+                <div class="skill-result-title">${escapeHtml(skill.title)}</div>
+                <div class="skill-result-count">${skill.roles.length} role${skill.roles.length > 1 ? 's' : ''} require this skill</div>
+              </div>
+              <div class="skill-result-actions">
+                <button class="skill-info-btn" data-skill-title="${escapeHtml(skill.title)}" title="View skill details">ℹ</button>
+                <span class="skill-result-expand">▼</span>
+              </div>
+            </div>
+            <div class="skill-result-roles">
+              ${skill.roles.map(role => `
+                <div class="role-link" data-role-key="${escapeHtml(role.key || '')}">
+                  <div>
+                    <div class="role-link-name">${escapeHtml(role.name)}</div>
+                    <div class="role-link-sector">${escapeHtml(role.sector)} · ${escapeHtml(role.track)}</div>
+                  </div>
+                  <span class="proficiency-badge">${escapeHtml(role.proficiency || Array.from(role.proficiencies || []).sort().join(', '))}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Toggle expand handlers
+      skillResults.querySelectorAll('.skill-result-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+          // Don't toggle if clicking the info button
+          if (e.target.closest('.skill-info-btn')) return;
+          header.closest('.skill-result-card').classList.toggle('expanded');
+        });
+      });
+
+      // Info button handlers
+      skillResults.querySelectorAll('.skill-info-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          
+          // Clear previous selection
+          skillResults.querySelectorAll('.skill-info-btn.active').forEach(b => b.classList.remove('active'));
+          skillResults.querySelectorAll('.role-link.active').forEach(link => link.classList.remove('active'));
+          btn.classList.add('active');
+          
+          const skillTitle = btn.dataset.skillTitle;
+          showSkillCentricDetail(skillTitle);
+        });
+      });
+
+      // Role link handlers (open detail focused on that role)
+      skillResults.querySelectorAll('.role-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const card = link.closest('.skill-result-card');
+          if (!card) return;
+
+          // Clear other selections
+          skillResults.querySelectorAll('.skill-info-btn.active').forEach(b => b.classList.remove('active'));
+          skillResults.querySelectorAll('.role-link.active').forEach(l => l.classList.remove('active'));
+          link.classList.add('active');
+
+          const skillTitle = card.dataset.skillTitle;
+          const roleKey = link.dataset.roleKey || null;
+          showSkillCentricDetail(skillTitle, roleKey);
+        });
+      });
+    }
+
+    // =========================================================================
+    // DETAIL PANEL - WITH K&A ITEMS SPLIT BY PROFICIENCY
+    // =========================================================================
+    function renderCwfSection(cwfList, heading = 'Critical Work Functions') {
+      if (!cwfList || !cwfList.length) return '';
+
+      return `
+        <div class="detail-section">
+          <div class="detail-section-title">${heading}</div>
+          ${cwfList.map(cwf => `
+            <div class="cwf-item" style="margin-bottom: 0.75rem;">
+              <div class="cwf-item-title">${escapeHtml(cwf.title)}</div>
+              ${(cwf.tasks || []).map(task => `
+                <div class="cwf-task">${escapeHtml(task)}</div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function openDetailPanel() {
+      detailPanel.classList.add('open');
+      detailPanel.scrollTop = 0;
+      detailBody.scrollTop = 0;
+    }
+
+    function showSkillDetail(skillTitle, roleKey) {
+      const roleData = analysisResults.roles.get(roleKey);
+      if (!roleData) return;
+
+      const skillData = roleData.uniqueSkills.find(s => s.title === skillTitle);
+      if (!skillData) return;
+
+      // Get proficiency levels sorted
+      const profLevels = Array.from(skillData.proficiencies.keys()).sort((a, b) => parseInt(a) - parseInt(b));
+
+      detailTitle.textContent = skillTitle;
+
+      let html = `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-content">${escapeHtml(skillData.description) || 'No description available.'}</div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Skill Info</div>
+          <div class="detail-tags">
+            <span class="badge badge-primary">${escapeHtml(skillData.skillType) || 'N/A'}</span>
+            ${skillData.isEmerging ? '<span class="badge badge-warning">Emerging Skill</span>' : ''}
+            ${skillData.isCasl ? '<span class="badge badge-success">CASL Skill</span>' : ''}
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Proficiency Levels</div>
+      `;
+
+      // Render each proficiency level separately
+      for (const level of profLevels) {
+        const profData = skillData.proficiencies.get(level);
+        const knowledgeItems = Array.from(profData.knowledgeItems);
+        const abilityItems = Array.from(profData.abilityItems);
+        const relatedTscs = Array.from(profData.tscs.values());
+
+        html += `
+          <div class="proficiency-group">
+            <div class="proficiency-group-header">
+              <div class="proficiency-group-level">${escapeHtml(level)}</div>
+              <div class="proficiency-group-title">Level ${escapeHtml(level)}</div>
+            </div>
+            ${profData.proficiencyDescription ? `
+              <div class="proficiency-group-desc">${escapeHtml(profData.proficiencyDescription)}</div>
+            ` : ''}
+            
+            ${knowledgeItems.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title knowledge">📚 Knowledge (${knowledgeItems.length})</div>
+                <ul class="detail-ka-list">
+                  ${knowledgeItems.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet knowledge"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${abilityItems.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title ability">⚡ Abilities (${abilityItems.length})</div>
+                <ul class="detail-ka-list">
+                  ${abilityItems.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet ability"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            <div class="detail-section" style="margin-top: 0.75rem; margin-bottom: 0;">
+              <div class="detail-section-title" style="font-size: 0.65rem;">Related TSCs (${relatedTscs.length})</div>
+              ${relatedTscs.map(tsc => `
+                <div style="padding: 0.4rem 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.25rem; font-size: 0.7rem;">
+                  <span style="font-family: monospace; background: var(--bg-tertiary); padding: 0.1rem 0.25rem; border-radius: 3px; margin-right: 0.25rem; font-size: 0.6rem;">${escapeHtml(tsc.code)}</span>
+                  <span style="color: var(--text-secondary);">${escapeHtml(tsc.title)}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+
+      detailBody.innerHTML = html;
+      openDetailPanel();
+    }
+
+    // Show skill detail for compare view (handles missing proficiencies)
+    function showCompareSkillDetail(skillTitle, role1Key, role2Key) {
+      const role1Data = analysisResults.roles.get(role1Key);
+      const role2Data = analysisResults.roles.get(role2Key);
+      if (!role1Data || !role2Data) return;
+
+      const skill1 = role1Data.uniqueSkills.find(s => s.title === skillTitle) || null;
+      const skill2 = role2Data.uniqueSkills.find(s => s.title === skillTitle) || null;
+
+      if (!skill1 && !skill2) return;
+
+      const allLevels = new Set();
+      if (skill1) {
+        skill1.proficiencies.forEach((_, k) => allLevels.add(parseInt(k)));
+      }
+      if (skill2) {
+        skill2.proficiencies.forEach((_, k) => allLevels.add(parseInt(k)));
+      }
+
+      if (allLevels.size) {
+        const minLevel = Math.min(...allLevels);
+        const maxLevel = Math.max(...allLevels);
+        for (let i = minLevel; i <= maxLevel; i++) {
+          allLevels.add(i);
+        }
+      }
+
+      const profLevels = Array.from(allLevels).sort((a, b) => a - b);
+
+      detailTitle.textContent = skillTitle;
+
+      const role1Levels = skill1 ? Array.from(skill1.proficiencies.keys()).sort().join(', ') : '—';
+      const role2Levels = skill2 ? Array.from(skill2.proficiencies.keys()).sort().join(', ') : '—';
+      const description = skill1?.description || skill2?.description || 'No description available.';
+
+      let html = `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-content">${escapeHtml(description)}</div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Comparison</div>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 120px; padding: 0.5rem; background: var(--accent-soft); border-radius: var(--radius-md); border-left: 3px solid var(--accent-primary);">
+              <div style="font-size: 0.7rem; color: var(--accent-primary); font-weight: 600;">${escapeHtml(role1Data.role)}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">${skill1 ? `Level ${escapeHtml(role1Levels)}` : 'NA'}</div>
+            </div>
+            <div style="flex: 1; min-width: 120px; padding: 0.5rem; background: rgba(139, 92, 246, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--accent-secondary);">
+              <div style="font-size: 0.7rem; color: var(--accent-secondary); font-weight: 600;">${escapeHtml(role2Data.role)}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">${skill2 ? `Level ${escapeHtml(role2Levels)}` : 'NA'}</div>
+            </div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Proficiency Levels</div>
+      `;
+
+      for (const level of profLevels) {
+        const levelStr = String(level);
+        const profData1 = skill1 ? skill1.proficiencies.get(levelStr) : null;
+        const profData2 = skill2 ? skill2.proficiencies.get(levelStr) : null;
+
+        const knowledgeItems = new Set();
+        const abilityItems = new Set();
+        const relatedTscs = [];
+        let profDescription = '';
+
+        if (profData1) {
+          profData1.knowledgeItems.forEach(k => knowledgeItems.add(k));
+          profData1.abilityItems.forEach(a => abilityItems.add(a));
+          profData1.tscs.forEach(t => relatedTscs.push(t));
+          if (profData1.proficiencyDescription) profDescription = profData1.proficiencyDescription;
+        }
+        if (profData2) {
+          profData2.knowledgeItems.forEach(k => knowledgeItems.add(k));
+          profData2.abilityItems.forEach(a => abilityItems.add(a));
+          profData2.tscs.forEach(t => {
+            if (!relatedTscs.find(rt => rt.code === t.code)) relatedTscs.push(t);
+          });
+          if (!profDescription && profData2.proficiencyDescription) profDescription = profData2.proficiencyDescription;
+        }
+
+        if (!profData1 && !profData2) {
+          for (const [, entry] of kAndAByCodeProf) {
+            if (entry.proficiencyLevel === levelStr) {
+              if (!profDescription && entry.proficiencyDescription) {
+                profDescription = entry.proficiencyDescription;
+              }
+              entry.knowledgeItems.forEach(k => knowledgeItems.add(k));
+              entry.abilityItems.forEach(a => abilityItems.add(a));
+              break;
+            }
+          }
+        }
+
+        const knowledgeArr = Array.from(knowledgeItems);
+        const abilityArr = Array.from(abilityItems);
+
+        html += `
+          <div class="proficiency-group">
+            <div class="proficiency-group-header">
+              <div class="proficiency-group-level">${level}</div>
+              <div class="proficiency-group-title">Level ${level}</div>
+            </div>
+            ${profDescription ? `
+              <div class="proficiency-group-desc">${escapeHtml(profDescription)}</div>
+            ` : ''}
+
+            ${knowledgeArr.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title knowledge">📚 Knowledge (${knowledgeArr.length})</div>
+                <ul class="detail-ka-list">
+                  ${knowledgeArr.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet knowledge"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${abilityArr.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title ability">⚡ Abilities (${abilityArr.length})</div>
+                <ul class="detail-ka-list">
+                  ${abilityArr.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet ability"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${relatedTscs.length > 0 ? `
+              <div class="detail-section" style="margin-top: 0.75rem; margin-bottom: 0;">
+                <div class="detail-section-title" style="font-size: 0.65rem;">Related TSCs (${relatedTscs.length})</div>
+                ${relatedTscs.map(tsc => `
+                  <div style="padding: 0.4rem 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.25rem; font-size: 0.7rem;">
+                    <span style="font-family: monospace; background: var(--bg-tertiary); padding: 0.1rem 0.25rem; border-radius: 3px; margin-right: 0.25rem; font-size: 0.6rem;">${escapeHtml(tsc.code)}</span>
+                    <span style="color: var(--text-secondary);">${escapeHtml(tsc.title)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+
+      detailBody.innerHTML = html;
+      openDetailPanel();
+    }
+
+    // Show skill detail for skill-centric view
+    function showSkillCentricDetail(skillTitle, focusedRoleKey = null) {
+      const skillData = analysisResults.uniqueSkills.get(skillTitle);
+      if (!skillData) return;
+
+      const allRoles = skillData.roles || [];
+      let rolesToShow = allRoles;
+
+      if (focusedRoleKey) {
+        rolesToShow = allRoles.filter(r => r.key === focusedRoleKey);
+        if (!rolesToShow.length) {
+          rolesToShow = allRoles;
+        }
+      }
+
+      // Get all proficiency levels from the scoped roles (default: all roles)
+      const allLevels = new Set();
+      rolesToShow.forEach(r => {
+        if (r.proficiencies) {
+          r.proficiencies.forEach(p => allLevels.add(parseInt(p)));
+        } else if (r.proficiency) {
+          allLevels.add(parseInt(r.proficiency));
+        }
+      });
+      
+      const profLevels = Array.from(allLevels).sort((a, b) => a - b);
+
+      detailTitle.textContent = skillTitle;
+      
+      let html = `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-content">${escapeHtml(skillData.description) || 'No description available.'}</div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Required by Roles</div>
+          ${rolesToShow.map(role => `
+            <div style="padding: 0.5rem; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 0.375rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="min-width: 0;">
+                <div style="font-size: 0.8rem; font-weight: 500; color: var(--text-primary);">${escapeHtml(role.name)}</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(role.sector)} · ${escapeHtml(role.track)}</div>
+              </div>
+              <span class="proficiency-badge">${escapeHtml(role.proficiency || Array.from(role.proficiencies || []).sort().join(', '))}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Proficiency Levels</div>
+      `;
+
+      // Render each proficiency level
+      for (const level of profLevels) {
+        const levelStr = String(level);
+        const profData = skillData.proficiencies ? skillData.proficiencies.get(levelStr) : null;
+        
+        const knowledgeItems = profData ? Array.from(profData.knowledgeItems) : [];
+        const abilityItems = profData ? Array.from(profData.abilityItems) : [];
+        const relatedTscs = profData ? Array.from(profData.tscs.values()) : [];
+        const profDescription = profData ? profData.proficiencyDescription : '';
+
+        html += `
+          <div class="proficiency-group">
+            <div class="proficiency-group-header">
+              <div class="proficiency-group-level">${level}</div>
+              <div class="proficiency-group-title">Level ${level}</div>
+            </div>
+            ${profDescription ? `
+              <div class="proficiency-group-desc">${escapeHtml(profDescription)}</div>
+            ` : ''}
+            
+            ${knowledgeItems.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title knowledge">📚 Knowledge (${knowledgeItems.length})</div>
+                <ul class="detail-ka-list">
+                  ${knowledgeItems.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet knowledge"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${abilityItems.length > 0 ? `
+              <div class="detail-ka-section">
+                <div class="detail-ka-title ability">⚡ Abilities (${abilityItems.length})</div>
+                <ul class="detail-ka-list">
+                  ${abilityItems.map(item => `
+                    <li class="detail-ka-item">
+                      <span class="ka-item-bullet ability"></span>
+                      <span>${escapeHtml(item)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${relatedTscs.length > 0 ? `
+              <div class="detail-section" style="margin-top: 0.75rem; margin-bottom: 0;">
+                <div class="detail-section-title" style="font-size: 0.65rem;">Related TSCs (${relatedTscs.length})</div>
+                ${relatedTscs.map(tsc => `
+                  <div style="padding: 0.4rem 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.25rem; font-size: 0.7rem;">
+                    <span style="font-family: monospace; background: var(--bg-tertiary); padding: 0.1rem 0.25rem; border-radius: 3px; margin-right: 0.25rem; font-size: 0.6rem;">${escapeHtml(tsc.code)}</span>
+                    <span style="color: var(--text-secondary);">${escapeHtml(tsc.title)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+
+      detailBody.innerHTML = html;
+      openDetailPanel();
+    }
+
+    function closeDetailPanel() {
+      detailPanel.classList.remove('open');
+      clearSkillSelection();
+    }
+
+    // =========================================================================
+    // EVENT LISTENERS
+    // =========================================================================
+    
+    // Mobile menu toggle
+    mobileMenuBtn.addEventListener('click', openSidebar);
+    sidebarBackdrop.addEventListener('click', closeSidebar);
+
+    // Bottom navigation
+    bottomNav.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.view;
+        
+        if (view === 'roles') {
+          openSidebar();
+          return;
+        }
+        
+        // If no analysis results yet, just open sidebar
+        if (!analysisResults) {
+          openSidebar();
+          return;
+        }
+        
+        // Update active state
+        updateBottomNavActive(view);
+        
+        // Switch view
+        currentView = view;
+        renderCurrentView();
+      });
+    });
+
+    // File section toggle
+    fileSectionHeader.addEventListener('click', () => {
+      fileSectionContainer.classList.toggle('expanded');
+    });
+
+    // File upload
+    fileUploadZone.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fileInput.click();
+    });
+    fileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files || [])));
+
+    fileUploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      fileUploadZone.classList.add('drag-over');
+    });
+
+    fileUploadZone.addEventListener('dragleave', () => {
+      fileUploadZone.classList.remove('drag-over');
+    });
+
+    fileUploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      fileUploadZone.classList.remove('drag-over');
+      handleFiles(Array.from(e.dataTransfer.files));
+    });
+
+    function resetDragState() {
+      dragCounter = 0;
+      dropOverlay.classList.remove('active');
+    }
+
+    // Full-page drag and drop
+    document.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      if (e.dataTransfer.types.includes('Files')) {
+        dropOverlay.classList.add('active');
+        // Expand file section to show upload zone
+        fileSectionContainer.classList.add('expanded');
+        // Open sidebar on mobile
+        if (isMobile) {
+          openSidebar();
+        }
+      }
+    });
+
+    document.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+  
+      // Check if we've left all elements OR left the document entirely
+      if (dragCounter <= 0 || e.relatedTarget === null) {
+        resetDragState();
+      }
+    });
+
+    document.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      dropOverlay.classList.remove('active');
+      handleFiles(Array.from(e.dataTransfer.files));
+    });
+
+    // Handle drag cancelled (e.g., pressing Escape)
+    document.addEventListener('dragend', (e) => {
+      resetDragState();
+    });
+
+    // Handle tab switches or window minimizing
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        resetDragState();
+      }
+    });
+
+    // Filtering
+    roleSearchInput.addEventListener('input', applyFilters);
+    sectorFilter.addEventListener('change', applyFilters);
+
+    // Selection
+    selectionExpandBtn.addEventListener('click', toggleChipsExpanded);
+    clearSelectionBtn.addEventListener('click', clearAllSelections);
+    analyzeBtn.addEventListener('click', runAnalysis);
+
+    // View toggles (desktop)
+    viewRoleBtn.addEventListener('click', () => {
+      currentView = 'role';
+      renderCurrentView();
+    });
+
+    viewCompareBtn.addEventListener('click', () => {
+      currentView = 'compare';
+      renderCurrentView();
+    });
+
+    viewSkillBtn.addEventListener('click', () => {
+      currentView = 'skill';
+      renderCurrentView();
+    });
+
+    // Skill search
+    document.getElementById('skillSearchInput').addEventListener('input', () => {
+      if (currentView === 'skill') {
+        renderSkillView();
+      }
+    });
+
+    // Detail panel
+    detailCloseBtn.addEventListener('click', closeDetailPanel);
+
+    // Handle resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        checkMobile();
+        if (!isMobile) {
+          closeSidebar();
+        }
+      }, 100);
+    });
+
+    // Initialize
+    (async function init() {
+      checkMobile();
+      
+      // Try to load preloaded data
+      const hasPreloadedData = await loadPreloadedData();
+      
+      if (!hasPreloadedData) {
+        // Expand file section if no preloaded data
+        fileSectionContainer.classList.add('expanded');
+      } else {
+        // Collapse file section since data is loaded
+        fileSectionContainer.classList.remove('expanded');
+      }
+    })();
+  </script>
+</body>
+</html>

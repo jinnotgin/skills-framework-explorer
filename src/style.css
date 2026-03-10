@@ -1,0 +1,239 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-app: #faf8f5;
+  --bg-subtle: #f3ede5;
+  --bg-muted: #ece3d7;
+  --surface-default: #fffdf9;
+  --surface-muted: #f6f0e8;
+  --surface-strong: #ebe0d2;
+  --border-default: #d8cbbb;
+  --border-strong: #c6b59f;
+  --text-primary: #2f2419;
+  --text-secondary: #5f5142;
+  --text-muted: #857563;
+  --primary: #8b4c1c;
+  --primary-strong: #6f3c14;
+  --primary-soft: #efe1d4;
+  --success: #2f6b5b;
+  --success-soft: #dbe7e1;
+  --warning: #996515;
+  --warning-soft: #f0e4c9;
+  --danger: #a33c30;
+  --danger-soft: #f3ddd8;
+  --shadow-subtle: 0 2px 8px rgba(47, 36, 25, 0.08);
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+@layer components {
+  .sidebar-shell {
+    @apply fixed inset-y-0 left-0 z-40 flex w-[min(92vw,17.5rem)] flex-col overflow-y-auto border-r border-[var(--border-default)] bg-[var(--bg-app)] px-4 pb-24 pt-16 transition-transform lg:sticky lg:top-14 lg:z-10 lg:h-[calc(100vh-3.5rem)] lg:w-auto lg:translate-x-0 lg:overflow-hidden lg:px-0 lg:pb-0 lg:pt-4;
+  }
+
+  .sidebar-panel {
+    @apply rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)];
+  }
+
+  .workspace-surface {
+    @apply min-h-[60vh];
+  }
+
+  .page-panel {
+    @apply rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)];
+  }
+
+  .bottom-nav-btn {
+    @apply flex h-12 flex-col items-center justify-center gap-1 rounded-[8px] text-xs font-medium text-[var(--text-muted)] transition-colors;
+  }
+
+  .bottom-nav-btn.active {
+    @apply bg-[var(--surface-muted)] text-[var(--text-primary)];
+  }
+
+  .empty-results {
+    @apply flex min-h-[18rem] flex-col items-center justify-center rounded-[10px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-default)] px-6 py-10 text-center;
+  }
+
+  .empty-results h2 {
+    @apply mt-3 text-lg font-semibold text-[var(--text-primary)];
+  }
+
+  .empty-results p {
+    @apply mt-2 max-w-xl text-sm leading-6 text-[var(--text-secondary)];
+  }
+
+  .empty-results-icon {
+    @apply text-3xl;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-[6px] border px-2 py-1 text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply border-[var(--border-strong)] bg-[var(--primary-soft)] text-[var(--primary-strong)];
+  }
+
+  .badge-success {
+    @apply border-[var(--border-strong)] bg-[var(--success-soft)] text-[var(--success)];
+  }
+
+  .badge-warning {
+    @apply border-[var(--border-strong)] bg-[var(--warning-soft)] text-[var(--warning)];
+  }
+
+  .level-badge {
+    @apply inline-flex h-7 min-w-7 items-center justify-center rounded-[6px] border border-[var(--border-strong)] bg-[var(--surface-muted)] px-2 text-xs font-semibold text-[var(--text-primary)];
+  }
+
+  .list-row {
+    @apply flex w-full items-start justify-between gap-4 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] px-3 py-2.5 text-left transition-colors;
+  }
+
+  .list-row:hover {
+    @apply bg-[var(--surface-muted)];
+  }
+
+  .list-row.active {
+    @apply border-[var(--primary)] bg-[var(--primary-soft)];
+  }
+
+  .detail-shell {
+    @apply fixed inset-y-0 right-0 z-40 flex w-[min(100vw,25rem)] translate-x-full flex-col border-l border-[var(--border-default)] bg-[var(--surface-default)] transition-transform lg:top-[4.5rem] lg:right-6 lg:h-[calc(100vh-6rem)] lg:rounded-[10px] lg:border lg:shadow-[var(--shadow-subtle)];
+  }
+
+  .detail-shell.open {
+    @apply translate-x-0;
+  }
+
+  .detail-shell.collapsed {
+    @apply lg:w-10;
+  }
+
+  .detail-section {
+    @apply mb-6;
+  }
+
+  .detail-section h3 {
+    @apply mb-2 text-sm font-semibold text-[var(--text-primary)];
+  }
+
+  .detail-section p {
+    @apply text-sm leading-6 text-[var(--text-secondary)];
+  }
+
+  .detail-card {
+    @apply mb-3 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] px-4 py-4;
+  }
+
+  .detail-card-header {
+    @apply flex items-center gap-3;
+  }
+
+  .detail-blurb {
+    @apply mt-3 rounded-[8px] bg-[var(--surface-muted)] px-3 py-3 text-sm leading-6 text-[var(--text-secondary)];
+  }
+
+  .detail-list-block {
+    @apply mt-4;
+  }
+
+  .detail-list-heading {
+    @apply mb-2 text-xs font-medium text-[var(--text-muted)];
+  }
+
+  .detail-list {
+    @apply space-y-2;
+  }
+
+  .detail-list li {
+    @apply rounded-[8px] bg-[var(--surface-muted)] px-3 py-3 text-sm leading-6 text-[var(--text-secondary)];
+  }
+
+  .table-shell {
+    @apply overflow-hidden rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)];
+  }
+
+  .dense-table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .dense-table th {
+    @apply border-b border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-2 text-left font-semibold text-[var(--text-secondary)];
+  }
+
+  .dense-table td {
+    @apply border-b border-[var(--border-default)] px-3 py-2 text-[var(--text-secondary)];
+  }
+
+  .dense-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .dense-table tbody tr {
+    @apply cursor-pointer transition-colors;
+  }
+
+  .dense-table tbody tr:hover {
+    @apply bg-[var(--surface-muted)];
+  }
+
+  .dense-table tbody tr.active {
+    @apply bg-[var(--primary-soft)];
+  }
+
+  .compare-table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .compare-table th {
+    @apply border-b border-[var(--border-default)] bg-[var(--surface-muted)] px-4 py-3 text-left font-semibold text-[var(--text-secondary)];
+  }
+
+  .compare-table td {
+    @apply border-b border-[var(--border-default)] px-4 py-3 align-top text-[var(--text-secondary)];
+  }
+
+  .compare-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .compare-table tbody tr {
+    @apply cursor-pointer transition-colors;
+  }
+
+  .compare-table tbody tr:hover {
+    @apply bg-[var(--surface-muted)];
+  }
+
+  .compare-table tbody tr.active {
+    @apply bg-[var(--primary-soft)];
+  }
+}

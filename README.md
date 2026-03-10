@@ -1,38 +1,55 @@
 # Skills Framework Explorer
 
-Discover what it takes to grow your career. This free tool helps you explore Singapore's official SkillsFuture Skills Framework, making it easy to understand job roles, compare career paths, and identify the skills you need to succeed.
+Vue 3 single-page app for exploring Singapore's SkillsFuture Skills Framework data. The app stays fully client-side: it ships with a preloaded dataset and can also parse the official XLSX workbooks directly in the browser.
 
-**[Try it now →]:** https://jinnotgin.github.io/skills-framework-explorer/
+## Stack
 
-## What You Can Do
+- Vue 3 + TypeScript
+- Vite
+- Pinia
+- Vue Router
+- Tailwind CSS
+- JSZip + SheetJS (`xlsx`)
+- Vitest
 
-### Understand Any Role at a Glance
-See what skills, knowledge, and abilities are needed for any job role across different sectors — from entry-level to senior positions.
+## Development
 
-### Compare Career Paths Side by Side
-Thinking about a career switch? Compare roles to see where your current skills transfer and what gaps you might need to fill.
+```bash
+npm install
+npm run dev
+```
 
-### Explore Skills Across Industries
-Curious where a particular skill is valued? Browse skills and discover which roles and sectors need them most.
+Production build:
 
-## Why Use This?
+```bash
+npm run build
+```
 
-- **Plan your next move** — Know exactly what to learn to qualify for the role you want.
-- **Make informed decisions** — Compare options before committing to a career path.
-- **Spot transferable skills** — See how your experience applies to new opportunities.
-- **Stay current** — Uses the latest official SkillsFuture data (Q3 2025).
+Unit tests:
 
-## Your Data, Your Privacy
+```bash
+npm test
+```
 
-Everything happens right in your browser. Nothing is uploaded or stored anywhere — your exploration stays private.
+## What the App Does
 
-## Keep It Updated
+- Explore job roles by sector and track
+- Analyse selected roles into a role-centric skills view
+- Compare two analysed roles side by side
+- Browse the same results from a skill-centric view
+- Inspect proficiency levels, knowledge, abilities, related TSCs, and critical work functions
 
-The tool comes pre-loaded with the latest SkillsFuture data, but you can also drag and drop newer official files from the [SkillsFuture - Skills Framework portal](https://jobsandskills.skillsfuture.gov.sg/frameworks/skills-frameworks) anytime to stay up to date:
-- Skills Framework Dataset workbook, with sheets `Job Role_Description`, `Job Role_TCS_CCS`, `TSC_CCS_K&A`
-- TSC to Unique Skills Mapping File workbook, with sheet `TSC to Unique Skill Mapping`
-- Unique Skills List workbook,with sheet `Unique Skills List`
+## Data Sources
 
----
+The app supports two client-side data paths:
 
-*Built to make career planning simpler and more accessible for everyone.*
+- Preloaded zip asset at [`/Users/ufinity/Documents/GitHub/skills-framework-explorer/public/data/skills-framework-data.json.zip`](/Users/ufinity/Documents/GitHub/skills-framework-explorer/public/data/skills-framework-data.json.zip)
+- Manual upload of the official SkillsFuture XLSX workbooks:
+  - Skills Framework Dataset workbook with `Job Role_Description`, `Job Role_TCS_CCS`, `TSC_CCS_K&A`
+  - TSC to Unique Skill Mapping workbook with `TSC to Unique Skill Mapping`
+  - Unique Skills List workbook with `Unique Skills List`
+
+## Notes
+
+- Firebase Hosting now serves the Vite build output from `dist/`.
+- The previous single-file implementation is preserved at [`/Users/ufinity/Documents/GitHub/skills-framework-explorer/legacy/index-legacy.html`](/Users/ufinity/Documents/GitHub/skills-framework-explorer/legacy/index-legacy.html) as a migration reference.
