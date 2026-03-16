@@ -1,7 +1,7 @@
 <template>
   <header class="sticky top-0 z-40 border-b border-[var(--border-default)] bg-[var(--surface-default)]">
     <div class="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-4 px-4 lg:px-6">
-      <div class="flex min-w-0 flex-1 basis-[20rem] items-center gap-3 lg:basis-[24rem]">
+      <div class="flex min-w-0 flex-1 items-center gap-3 lg:basis-[24rem]">
         <button
           class="inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] text-[var(--text-secondary)] lg:hidden"
           type="button"
@@ -11,7 +11,7 @@
         </button>
 
         <div class="min-w-0">
-          <div class="text-base font-semibold text-[var(--text-primary)] sm:text-lg">Skills Framework Explorer</div>
+          <div class="truncate whitespace-nowrap text-[0.95rem] font-semibold text-[var(--text-primary)] sm:text-lg">Skills Framework Explorer</div>
         </div>
       </div>
 
@@ -27,7 +27,7 @@
         </RouterLink>
       </nav>
 
-      <div class="flex flex-1 basis-[20rem] items-center justify-end gap-2 lg:basis-[24rem]">
+      <div class="hidden items-center justify-end gap-2 sm:flex sm:flex-1 lg:basis-[24rem]">
         <button
           class="hidden rounded-[8px] border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] sm:inline-flex"
           type="button"
@@ -37,7 +37,7 @@
         </button>
 
         <button
-          class="inline-flex items-center gap-2 rounded-[8px] border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)]"
+          class="hidden items-center gap-2 rounded-[8px] border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] sm:inline-flex"
           type="button"
           @click="$emit('openDataModal')"
         >
