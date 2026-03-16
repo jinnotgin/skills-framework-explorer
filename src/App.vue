@@ -22,17 +22,6 @@
 
     <main class="mx-auto max-w-[1600px] px-4 pb-24 pt-4 lg:px-6 lg:pb-6">
       <section class="min-w-0 transition-[padding-right] duration-150" :class="{ 'lg:pr-[27rem]': explorerStore.detail.open }">
-        <div v-if="datasetStore.hasDataset && !datasetStore.isPreloading && !explorerStore.analysisResults" class="page-panel mb-4 px-5 py-4">
-          <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div class="text-sm text-[var(--text-secondary)]">
-              Open role selection to stage roles for analysis, then use the workspace and inspector to read the results.
-            </div>
-            <div class="text-sm text-[var(--text-secondary)]">
-              {{ datasetStore.roles.length }} roles across {{ datasetStore.sectors.length }} sectors
-            </div>
-          </div>
-        </div>
-
         <div v-if="datasetStore.isPreloading" class="workspace-surface">
           <div class="empty-results">
             <div
