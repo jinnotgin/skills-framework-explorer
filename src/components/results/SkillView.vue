@@ -10,11 +10,10 @@
 
   <div v-else class="space-y-4">
     <section class="page-panel px-5 py-4">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex flex-col gap-2 text-sm text-[var(--text-secondary)] sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
           <div class="text-lg font-semibold text-[var(--text-primary)]">Skill index</div>
           <div><span class="font-semibold text-[var(--text-primary)]">{{ filteredSkills.length }}</span> shown</div>
-          <div><span class="font-semibold text-[var(--text-primary)]">{{ results.totalTscs }}</span> TSC rows</div>
         </div>
 
         <div class="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[36rem] lg:flex-row lg:items-center lg:justify-end">
