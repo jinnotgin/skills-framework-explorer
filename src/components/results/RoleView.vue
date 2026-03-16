@@ -10,7 +10,7 @@
       }}
     </p>
     <UiButton v-if="datasetStore.hasDataset" class="mt-4" variant="primary" @click="uiStore.setSidebarOpen(true)">
-      Select roles
+      Filter roles
     </UiButton>
   </div>
 

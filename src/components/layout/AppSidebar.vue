@@ -89,7 +89,7 @@
 
         <section class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
           <div class="border-b border-[var(--border-default)] px-4 py-4">
-            <div class="text-sm font-semibold text-[var(--text-primary)]">{{ explorerStore.selectedRoleKeys.length }} selected</div>
+            <div class="text-sm font-semibold text-[var(--text-primary)]">{{ draftSelectedRoleKeys.length }} selected</div>
             <div class="mt-1 text-xs leading-5 text-[var(--text-muted)]">{{ analysisMessage }}</div>
           </div>
 
@@ -113,8 +113,8 @@
 
           <div class="border-t border-[var(--border-default)] bg-[var(--surface-muted)] px-4 py-4">
             <div class="flex items-center justify-between gap-3">
-              <UiButton size="sm" variant="ghost" :disabled="!explorerStore.selectedRoleKeys.length" @click="explorerStore.clearSelection()">Clear</UiButton>
-              <UiButton variant="primary" :disabled="!explorerStore.selectedRoleKeys.length" @click="analyze">
+              <UiButton size="sm" variant="ghost" :disabled="!draftSelectedRoleKeys.length" @click="clearDraftSelection">Clear</UiButton>
+              <UiButton variant="primary" :disabled="!canApplySelection" @click="analyze">
                 {{ analyzeLabel }}
               </UiButton>
             </div>
@@ -144,6 +144,7 @@ const router = useRouter();
 
 const expandedSectors = reactive(new Set<string>());
 const searchInput = ref<InstanceType<typeof UiInput> | null>(null);
+const draftSelectedRoleKeys = ref<string[]>([]);
 
 const searchQuery = computed({
   get: () => explorerStore.roleSearchQuery,
@@ -190,23 +191,23 @@ const filteredGroups = computed(() => {
 
 const visibleRoles = computed(() => filteredGroups.value.flatMap((group) => group.visibleRoles));
 const visibleRoleCount = computed(() => visibleRoles.value.length);
-const allVisibleSelected = computed(() => visibleRoles.value.length > 0 && visibleRoles.value.every((role) => explorerStore.selectedRoleKeys.includes(role.key)));
+const allVisibleSelected = computed(() => visibleRoles.value.length > 0 && visibleRoles.value.every((role) => draftSelectedRoleKeys.value.includes(role.key)));
 
 const selectedRoleSummaries = computed(() =>
-  explorerStore.selectedRoleKeys
+  draftSelectedRoleKeys.value
     .map((key) => datasetStore.dataset?.roleByKey[key] ?? null)
     .filter((role): role is NonNullable<typeof role> => Boolean(role)),
 );
 
 const analysisDirty = computed(() => {
-  const selected = [...explorerStore.selectedRoleKeys].sort();
+  const selected = [...draftSelectedRoleKeys.value].sort();
   const analyzed = [...explorerStore.analyzedRoleKeys].sort();
   return JSON.stringify(selected) !== JSON.stringify(analyzed);
 });
 
 const analysisMessage = computed(() => {
-  if (!explorerStore.selectedRoleKeys.length) {
-    return 'Choose roles for the next analysis.';
+  if (!draftSelectedRoleKeys.value.length) {
+    return explorerStore.analysisResults ? 'Update analysis to clear the current results.' : 'Choose roles for the next analysis.';
   }
   if (!explorerStore.analysisResults) {
     return 'Run analysis to open the workbench.';
@@ -216,6 +217,8 @@ const analysisMessage = computed(() => {
   }
   return 'Selection matches the current analysis.';
 });
+
+const canApplySelection = computed(() => draftSelectedRoleKeys.value.length > 0 || Boolean(explorerStore.analysisResults));
 
 const analyzeLabel = computed(() => {
   if (!explorerStore.analysisResults) {
@@ -244,6 +247,7 @@ watch(
       return;
     }
 
+    draftSelectedRoleKeys.value = [...explorerStore.selectedRoleKeys];
     await nextTick();
     searchInput.value?.focus();
   },
@@ -258,11 +262,16 @@ function toggleSector(sector: string) {
 }
 
 function isSelected(key: string) {
-  return explorerStore.selectedRoleKeys.includes(key);
+  return draftSelectedRoleKeys.value.includes(key);
 }
 
 function toggleRole(key: string) {
-  explorerStore.toggleRole(key);
+  if (draftSelectedRoleKeys.value.includes(key)) {
+    draftSelectedRoleKeys.value = draftSelectedRoleKeys.value.filter((roleKey) => roleKey !== key);
+    return;
+  }
+
+  draftSelectedRoleKeys.value = [...draftSelectedRoleKeys.value, key];
 }
 
 function toggleAllVisible() {
@@ -272,17 +281,22 @@ function toggleAllVisible() {
 
   if (allVisibleSelected.value) {
     const visibleKeys = new Set(visibleRoles.value.map((role) => role.key));
-    explorerStore.setSelection(explorerStore.selectedRoleKeys.filter((key) => !visibleKeys.has(key)));
+    draftSelectedRoleKeys.value = draftSelectedRoleKeys.value.filter((key) => !visibleKeys.has(key));
     return;
   }
 
-  const nextKeys = new Set(explorerStore.selectedRoleKeys);
+  const nextKeys = new Set(draftSelectedRoleKeys.value);
   visibleRoles.value.forEach((role) => nextKeys.add(role.key));
-  explorerStore.setSelection(Array.from(nextKeys));
+  draftSelectedRoleKeys.value = Array.from(nextKeys);
+}
+
+function clearDraftSelection() {
+  draftSelectedRoleKeys.value = [];
 }
 
 function analyze() {
-  explorerStore.runAnalysis(datasetStore.dataset);
+  explorerStore.setSelection(draftSelectedRoleKeys.value);
+  explorerStore.runAnalysis(datasetStore.dataset, draftSelectedRoleKeys.value);
   uiStore.setSidebarOpen(false);
   router.push('/roles');
 }
