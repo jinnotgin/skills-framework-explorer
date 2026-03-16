@@ -195,6 +195,115 @@ export function buildAnalysis(dataset: NormalizedDataset | null, roleKeys: RoleK
   };
 }
 
+export function buildSkillsIndex(dataset: NormalizedDataset | null, roleKeys?: RoleKey[]): AnalysisResults | null {
+  if (!dataset) {
+    return null;
+  }
+
+  const effectiveRoleKeys = roleKeys?.length ? roleKeys : dataset.roles.map((role) => role.key);
+  if (!effectiveRoleKeys.length) {
+    return null;
+  }
+
+  const selectedKeySet = new Set(effectiveRoleKeys);
+  const tscRows = dataset.jobRoleTcsCcs.filter((row) => selectedKeySet.has(makeRoleKey(row)));
+  const globalSkills: AnalysisResults['uniqueSkills'] = {};
+  let totalTscs = 0;
+
+  for (const row of tscRows) {
+    const roleKey = makeRoleKey(row);
+    const roleMeta = dataset.roleByKey[roleKey];
+    if (!roleMeta) {
+      continue;
+    }
+
+    const code = safeStr(row['TSC_CCS Code']);
+    const proficiency = safeStr(row['Proficiency Level']);
+    const type = safeStr(row['TSC_CCS Type']);
+    const info = dataset.tscInfoByCode[code];
+    const mapping = dataset.tscMappingByCodeProf[`${code}|${proficiency}`] ?? dataset.tscMappingByCode[code];
+    const uniqueSkillTitle = safeStr(mapping?.parent_skill_title);
+    const kAndA = dataset.kAndAByCodeProf[`${code}|${proficiency}`];
+
+    const tsc: SkillTsc = {
+      code,
+      title: info?.title || code,
+      type,
+      proficiency,
+      proficiencyDescription: kAndA?.proficiencyDescription ?? '',
+      knowledgeItems: kAndA?.knowledgeItems ?? [],
+      abilityItems: kAndA?.abilityItems ?? [],
+      category: info?.category ?? '',
+      parentSkillTitle: uniqueSkillTitle,
+      skillType: safeStr(mapping?.skill_type),
+      isEmerging: toBool(mapping?.['Emerging Skills']),
+      isCasl: toBool(mapping?.['CASL Skills']),
+    };
+
+    totalTscs += 1;
+
+    if (!uniqueSkillTitle) {
+      continue;
+    }
+
+    if (!globalSkills[uniqueSkillTitle]) {
+      const skillRow = dataset.uniqueSkillByTitle[uniqueSkillTitle];
+      globalSkills[uniqueSkillTitle] = {
+        title: uniqueSkillTitle,
+        description: safeStr(skillRow?.parent_skill_description),
+        roles: [],
+        proficiencies: {},
+        proficiencyLevels: [],
+      };
+    }
+
+    const globalSkill = globalSkills[uniqueSkillTitle];
+    const roleRef = globalSkill.roles.find((item) => item.key === roleKey);
+    if (!roleRef) {
+      const nextRole: SkillRoleReference = {
+        key: roleKey,
+        name: roleMeta.role,
+        sector: roleMeta.sector,
+        track: roleMeta.track,
+        proficiency,
+        proficiencies: [proficiency],
+      };
+      globalSkill.roles.push(nextRole);
+    } else if (!roleRef.proficiencies.includes(proficiency)) {
+      roleRef.proficiencies.push(proficiency);
+      roleRef.proficiencies = sortLevels(roleRef.proficiencies);
+      roleRef.proficiency = roleRef.proficiencies.join(', ');
+    }
+
+    const globalProficiency = ensureProficiencyRecord(globalSkill.proficiencies, proficiency, tsc.proficiencyDescription);
+    pushUnique(globalProficiency.knowledgeItems, tsc.knowledgeItems);
+    pushUnique(globalProficiency.abilityItems, tsc.abilityItems);
+    pushUniqueTsc(globalProficiency.tscs, tsc);
+  }
+
+  const uniqueSkillTitles = Object.keys(globalSkills).sort((left, right) => left.localeCompare(right));
+  for (const title of uniqueSkillTitles) {
+    globalSkills[title].roles = globalSkills[title].roles
+      .map((role) => ({
+        ...role,
+        proficiencies: sortLevels(role.proficiencies),
+        proficiency: sortLevels(role.proficiencies).join(', '),
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name) || left.track.localeCompare(right.track));
+    globalSkills[title].proficiencyLevels = sortLevels(Object.keys(globalSkills[title].proficiencies));
+  }
+
+  return {
+    roles: {},
+    roleKeys: effectiveRoleKeys,
+    uniqueSkills: globalSkills,
+    uniqueSkillTitles,
+    totalRoles: effectiveRoleKeys.length,
+    totalUniqueSkills: uniqueSkillTitles.length,
+    totalTscs,
+  };
+}
+
 export function buildCompareRows(results: AnalysisResults | null, role1Key: RoleKey | null, role2Key: RoleKey | null): CompareSkillRow[] {
   if (!results || !role1Key || !role2Key) {
     return [];

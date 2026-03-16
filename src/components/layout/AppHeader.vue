@@ -74,7 +74,7 @@ const views = [
 
 const roleSelectorLabel = computed(() => {
   const count = explorerStore.selectedRoleKeys.length;
-  return count > 0 ? `Select roles (${count})` : 'Select roles';
+  return count > 0 ? `Filter roles (${count})` : 'Filter roles';
 });
 
 const statusText = computed(() => {

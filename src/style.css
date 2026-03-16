@@ -256,4 +256,23 @@ select {
   .compare-table tbody tr.active {
     @apply bg-[var(--primary-soft)];
   }
+
+  .skills-table {
+    table-layout: fixed;
+  }
+
+  .skills-table th:nth-child(1),
+  .skills-table td:nth-child(1) {
+    width: 24%;
+  }
+
+  .skills-table th:nth-child(3),
+  .skills-table td:nth-child(3) {
+    width: 12%;
+  }
+
+  .skills-table-row {
+    content-visibility: auto;
+    contain-intrinsic-size: 92px;
+  }
 }

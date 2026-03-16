@@ -269,13 +269,18 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { ChevronDown, X } from 'lucide-vue-next';
+import { useRoute } from 'vue-router';
 
+import { buildSkillsIndex } from '../../lib/skills-framework/analysis';
 import { sortLevels } from '../../lib/skills-framework/utils';
+import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
 import { useUiStore } from '../../stores/ui';
 
+const datasetStore = useDatasetStore();
 const explorerStore = useExplorerStore();
 const uiStore = useUiStore();
+const route = useRoute();
 
 const sectionOpen = reactive({
   overview: true,
@@ -285,7 +290,17 @@ const sectionOpen = reactive({
 const activeLevel = ref('');
 const scrollContainer = ref<HTMLElement | null>(null);
 
-const analysisResults = computed(() => explorerStore.analysisResults);
+const analysisResults = computed(() => {
+  if (explorerStore.analysisResults && explorerStore.selectedRoleKeys.length > 0) {
+    return explorerStore.analysisResults;
+  }
+
+  if (route.path === '/skills' && datasetStore.hasDataset && !explorerStore.selectedRoleKeys.length) {
+    return buildSkillsIndex(datasetStore.dataset);
+  }
+
+  return explorerStore.analysisResults;
+});
 const detail = computed(() => explorerStore.detail);
 
 watch(
