@@ -48,7 +48,9 @@ function detectWorkbookKind(sheetNames: string[]): WorkbookKind | null {
   return null;
 }
 
-export async function loadPreloadedDataset(url = '/data/skills-framework-data.json.zip'): Promise<DatasetRawData | null> {
+const PRELOADED_DATASET_URL = `${import.meta.env.BASE_URL}data/skills-framework-data.json.zip`;
+
+export async function loadPreloadedDataset(url = PRELOADED_DATASET_URL): Promise<DatasetRawData | null> {
   const response = await fetch(url);
 
   if (!response.ok) {

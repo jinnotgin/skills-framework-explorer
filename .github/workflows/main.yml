@@ -33,7 +33,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          GITHUB_PAGES: true
+          APP_BASE_PATH: skills-framework-explorer
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
