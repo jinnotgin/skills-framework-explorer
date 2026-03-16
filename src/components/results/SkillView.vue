@@ -11,7 +11,7 @@
   <div v-else class="space-y-4">
     <section class="page-panel px-5 py-4">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div class="flex items-center gap-x-6 gap-y-2 text-sm text-[var(--text-secondary)]">
+        <div class="flex flex-col gap-2 text-sm text-[var(--text-secondary)] sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
           <div class="text-lg font-semibold text-[var(--text-primary)]">Skill index</div>
           <div><span class="font-semibold text-[var(--text-primary)]">{{ filteredSkills.length }}</span> shown</div>
           <div><span class="font-semibold text-[var(--text-primary)]">{{ results.totalTscs }}</span> TSC rows</div>
@@ -22,6 +22,7 @@
             <UiInput v-model="skillInput" placeholder="Search skills" />
           </div>
           <UiButton
+            v-if="!uiStore.isMobile"
             size="sm"
             variant="secondary"
             :disabled="!filteredSkills.length"
@@ -35,7 +36,33 @@
     </section>
 
     <section class="table-shell">
-      <table v-if="filteredSkills.length" class="compare-table skills-table">
+      <div v-if="filteredSkills.length && uiStore.isMobile" class="divide-y divide-[var(--border-default)]">
+        <button
+          v-for="skill in filteredSkills"
+          :key="skill.title"
+          class="block w-full px-4 py-4 text-left transition-colors hover:bg-[var(--surface-muted)]"
+          :class="{ 'bg-[var(--primary-soft)]': explorerStore.detail.kind === 'skill-centric' && explorerStore.detail.skillTitle === skill.title }"
+          type="button"
+          @click="explorerStore.openSkillCentricDetail(skill.title)"
+        >
+          <div class="text-base font-semibold text-[var(--text-primary)]">{{ skill.title }}</div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span
+              v-for="role in skill.roles.slice(0, 2)"
+              :key="role.key"
+              class="badge badge-primary"
+            >
+              {{ role.name }}
+            </span>
+            <span v-if="skill.roles.length > 2" class="inline-flex items-center text-xs text-[var(--text-muted)]">+{{ skill.roles.length - 2 }} more</span>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span v-for="level in skill.proficiencyLevels" :key="level" class="level-badge">{{ level }}</span>
+          </div>
+        </button>
+      </div>
+
+      <table v-else-if="filteredSkills.length" class="compare-table skills-table">
         <thead>
           <tr>
             <th>Skill</th>
