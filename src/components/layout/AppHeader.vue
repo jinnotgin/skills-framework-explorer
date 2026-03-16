@@ -11,7 +11,7 @@
         </button>
 
         <div class="min-w-0">
-          <div class="text-lg font-semibold text-[var(--text-primary)]">Skills Framework Explorer</div>
+          <div class="text-base font-semibold text-[var(--text-primary)] sm:text-lg">Skills Framework Explorer</div>
         </div>
       </div>
 
