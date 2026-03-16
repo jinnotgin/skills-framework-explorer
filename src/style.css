@@ -133,10 +133,6 @@ select {
     @apply translate-x-0;
   }
 
-  .detail-shell.collapsed {
-    @apply lg:w-10;
-  }
-
   .detail-section {
     @apply mb-6;
   }

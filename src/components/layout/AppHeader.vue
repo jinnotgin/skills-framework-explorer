@@ -1,7 +1,7 @@
 <template>
   <header class="sticky top-0 z-40 border-b border-[var(--border-default)] bg-[var(--surface-default)]">
     <div class="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-4 px-4 lg:px-6">
-      <div class="flex min-w-0 items-center gap-3">
+      <div class="flex min-w-0 flex-1 basis-[20rem] items-center gap-3 lg:basis-[24rem]">
         <button
           class="inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] text-[var(--text-secondary)] lg:hidden"
           type="button"
@@ -11,12 +11,11 @@
         </button>
 
         <div class="min-w-0">
-          <div class="text-sm font-semibold text-[var(--text-primary)]">Skills Framework Explorer</div>
-          <div class="text-xs text-[var(--text-muted)]">Client-side role and skills analysis</div>
+          <div class="text-lg font-semibold text-[var(--text-primary)]">Skills Framework Explorer</div>
         </div>
       </div>
 
-      <nav class="hidden items-center gap-1 md:flex">
+      <nav class="hidden flex-none items-center gap-1 md:flex">
         <RouterLink
           v-for="view in views"
           :key="view.to"
@@ -28,13 +27,13 @@
         </RouterLink>
       </nav>
 
-      <div class="flex items-center gap-2">
+      <div class="flex flex-1 basis-[20rem] items-center justify-end gap-2 lg:basis-[24rem]">
         <button
           class="hidden rounded-[8px] border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] sm:inline-flex"
           type="button"
           @click="$emit('openRoleSelector')"
         >
-          Select roles
+          {{ roleSelectorLabel }}
         </button>
 
         <button
@@ -56,6 +55,7 @@ import { RouterLink, useRoute } from 'vue-router';
 import { Menu } from 'lucide-vue-next';
 
 import { useDatasetStore } from '../../stores/dataset';
+import { useExplorerStore } from '../../stores/explorer';
 
 defineEmits<{
   openRoleSelector: [];
@@ -63,6 +63,7 @@ defineEmits<{
 }>();
 
 const datasetStore = useDatasetStore();
+const explorerStore = useExplorerStore();
 const route = useRoute();
 
 const views = [
@@ -70,6 +71,11 @@ const views = [
   { to: '/compare', label: 'Compare' },
   { to: '/skills', label: 'Skills' },
 ];
+
+const roleSelectorLabel = computed(() => {
+  const count = explorerStore.selectedRoleKeys.length;
+  return count > 0 ? `Select roles (${count})` : 'Select roles';
+});
 
 const statusText = computed(() => {
   if (datasetStore.isPreloading) {
@@ -86,7 +92,7 @@ const statusText = computed(() => {
 
 const statusDotClass = computed(() => {
   if (datasetStore.isPreloading || datasetStore.loadedCount < 3) {
-    return 'bg-[var(--warning)]';
+    return datasetStore.isPreloading ? 'bg-[var(--warning)] animate-pulse' : 'bg-[var(--warning)]';
   }
   if (datasetStore.loadedCount === 3) {
     return 'bg-[var(--success)]';

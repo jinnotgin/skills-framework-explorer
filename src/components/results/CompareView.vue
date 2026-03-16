@@ -3,6 +3,9 @@
     <div class="empty-results-icon">⚖️</div>
     <h2>Run an analysis to compare roles</h2>
     <p>Select and analyse at least two roles to compare shared skills and proficiency differences.</p>
+    <UiButton v-if="datasetStore.hasDataset" class="mt-4" variant="primary" @click="uiStore.setSidebarOpen(true)">
+      Select roles
+    </UiButton>
   </div>
 
   <div v-else-if="results.roleKeys.length < 2" class="empty-results">
@@ -28,33 +31,33 @@
         </div>
       </div>
 
-      <div class="mt-4 flex flex-wrap gap-2">
-        <button
-          v-for="filter in filters"
-          :key="filter.value"
-          class="rounded-[8px] border px-3 py-2 text-sm font-medium transition-colors"
-          :class="
-            explorerStore.compareFilter === filter.value
-              ? 'border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--text-primary)]'
-              : 'border-[var(--border-default)] bg-[var(--surface-default)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]'
-          "
-          type="button"
-          @click="explorerStore.setCompareFilter(filter.value)"
-        >
-          {{ filter.label }}
-        </button>
-        <button
-          class="rounded-[8px] border px-3 py-2 text-sm font-medium transition-colors"
-          :class="
-            explorerStore.compareShowDescriptions
-              ? 'border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--text-primary)]'
-              : 'border-[var(--border-default)] bg-[var(--surface-default)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]'
-          "
-          type="button"
+      <div class="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="filter in filters"
+            :key="filter.value"
+            class="rounded-[8px] border px-3 py-2 text-sm font-medium transition-colors"
+            :class="
+              explorerStore.compareFilter === filter.value
+                ? 'border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--text-primary)]'
+                : 'border-[var(--border-default)] bg-[var(--surface-default)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]'
+            "
+            type="button"
+            @click="explorerStore.setCompareFilter(filter.value)"
+          >
+            {{ filter.label }}
+          </button>
+        </div>
+
+        <UiButton
+          size="sm"
+          variant="secondary"
+          :title="explorerStore.compareShowDescriptions ? 'Hide details' : 'Show details'"
           @click="explorerStore.setCompareShowDescriptions(!explorerStore.compareShowDescriptions)"
         >
-          {{ explorerStore.compareShowDescriptions ? 'Hide details' : 'Show details' }}
-        </button>
+          <FileText class="mr-2 h-4 w-4" />
+          <span>{{ explorerStore.compareShowDescriptions ? 'Hide details' : 'Show details' }}</span>
+        </UiButton>
       </div>
     </section>
 
@@ -132,13 +135,19 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { FileText } from 'lucide-vue-next';
 
+import UiButton from '../ui/UiButton.vue';
 import UiSelect from '../ui/UiSelect.vue';
 import { buildCompareRows } from '../../lib/skills-framework/analysis';
 import { formatRoleLabel } from '../../lib/skills-framework/utils';
+import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
+import { useUiStore } from '../../stores/ui';
 
+const datasetStore = useDatasetStore();
 const explorerStore = useExplorerStore();
+const uiStore = useUiStore();
 
 const filters = [
   { value: 'all', label: 'All' },

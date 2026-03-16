@@ -1,39 +1,11 @@
 <template>
-  <button
-    v-if="detail.open && uiStore.detailCollapsed"
-    class="fixed bottom-6 right-6 z-40 hidden h-10 items-center gap-2 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] px-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-subtle)] lg:inline-flex"
-    type="button"
-    @click="uiStore.setDetailCollapsed(false)"
-  >
-    <PanelRightOpen class="h-4 w-4" />
-    <span class="max-w-[12rem] truncate">{{ detail.skillTitle }}</span>
-  </button>
-
-  <aside
-    v-if="detail.open || uiStore.isMobile"
-    class="detail-shell"
-    :class="{
-      open: detail.open,
-      collapsed: detail.open && uiStore.detailCollapsed && !uiStore.isMobile,
-    }"
-  >
-    <template v-if="detail.open && (!uiStore.detailCollapsed || uiStore.isMobile)">
+  <aside v-if="detail.open || uiStore.isMobile" class="detail-shell" :class="{ open: detail.open }">
+    <template v-if="detail.open">
       <div class="flex items-start justify-between gap-4 border-b border-[var(--border-default)] px-5 py-4">
         <div>
           <div class="text-sm font-semibold text-[var(--text-primary)]">{{ detail.skillTitle }}</div>
-          <p class="mt-1 text-sm text-[var(--text-secondary)]">
-            Review descriptions, levels, knowledge, abilities, and role coverage.
-          </p>
         </div>
         <div class="flex items-center gap-2">
-          <button
-            v-if="!uiStore.isMobile"
-            class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] text-[var(--text-secondary)]"
-            type="button"
-            @click="uiStore.setDetailCollapsed(true)"
-          >
-            <PanelRightClose class="h-4 w-4" />
-          </button>
           <button
             class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] text-[var(--text-secondary)]"
             type="button"
@@ -44,7 +16,7 @@
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto px-5 py-5">
+      <div ref="scrollContainer" class="flex-1 overflow-y-auto px-5 pb-0 pt-5">
         <template v-if="detail.kind === 'role-skill' && roleSkillDetail">
           <section class="detail-section">
             <button class="flex w-full items-center justify-between gap-3 text-left" type="button" @click="toggleSection('overview')">
@@ -54,7 +26,6 @@
             <div v-show="sectionOpen.overview" class="mt-2 space-y-4">
               <p>{{ roleSkillDetail.description || 'No description available.' }}</p>
               <div class="flex flex-wrap gap-2">
-                <span class="badge badge-primary">{{ roleSkillDetail.skillType || 'No type' }}</span>
                 <span v-if="roleSkillDetail.isEmerging" class="badge badge-warning">Emerging skill</span>
                 <span v-if="roleSkillDetail.isCasl" class="badge badge-success">CASL skill</span>
               </div>
@@ -67,7 +38,7 @@
               <ChevronDown class="h-4 w-4 text-[var(--text-muted)] transition" :class="{ 'rotate-180': sectionOpen.levels }" />
             </button>
             <div v-show="sectionOpen.levels" class="mt-3">
-              <div class="mb-3 flex flex-wrap gap-2">
+              <div v-if="roleSkillDetail.proficiencyLevels.length > 1" class="mb-3 flex flex-wrap gap-2">
                 <button
                   v-for="level in roleSkillDetail.proficiencyLevels"
                   :key="level"
@@ -148,7 +119,7 @@
               <ChevronDown class="h-4 w-4 text-[var(--text-muted)] transition" :class="{ 'rotate-180': sectionOpen.levels }" />
             </button>
             <div v-show="sectionOpen.levels" class="mt-3">
-              <div class="mb-3 flex flex-wrap gap-2">
+              <div v-if="compareSkillDetail.levels.length > 1" class="mb-3 flex flex-wrap gap-2">
                 <button
                   v-for="level in compareSkillDetail.levels"
                   :key="level.level"
@@ -237,7 +208,7 @@
               <ChevronDown class="h-4 w-4 text-[var(--text-muted)] transition" :class="{ 'rotate-180': sectionOpen.levels }" />
             </button>
             <div v-show="sectionOpen.levels" class="mt-3">
-              <div class="mb-3 flex flex-wrap gap-2">
+              <div v-if="skillCentricDetail.proficiencyLevels.length > 1" class="mb-3 flex flex-wrap gap-2">
                 <button
                   v-for="level in skillCentricDetail.proficiencyLevels"
                   :key="level"
@@ -296,8 +267,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
-import { ChevronDown, PanelRightClose, PanelRightOpen, X } from 'lucide-vue-next';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
+import { ChevronDown, X } from 'lucide-vue-next';
 
 import { sortLevels } from '../../lib/skills-framework/utils';
 import { useExplorerStore } from '../../stores/explorer';
@@ -312,6 +283,7 @@ const sectionOpen = reactive({
   levels: true,
 });
 const activeLevel = ref('');
+const scrollContainer = ref<HTMLElement | null>(null);
 
 const analysisResults = computed(() => explorerStore.analysisResults);
 const detail = computed(() => explorerStore.detail);
@@ -322,11 +294,16 @@ watch(
     sectionOpen.overview = true;
     sectionOpen.roles = true;
     sectionOpen.levels = true;
-    if (detail.value.open) {
-      uiStore.setDetailCollapsed(false);
-    }
   },
   { immediate: true },
+);
+
+watch(
+  () => [detail.value.open, detail.value.kind, detail.value.skillTitle, detail.value.roleKey, detail.value.role1Key, detail.value.role2Key, detail.value.focusedRoleKey],
+  async () => {
+    await nextTick();
+    scrollContainer.value?.scrollTo({ top: 0, behavior: 'auto' });
+  },
 );
 
 const roleSkillDetail = computed(() => {

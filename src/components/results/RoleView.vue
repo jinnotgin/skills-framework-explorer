@@ -9,6 +9,9 @@
           : 'Load the bundled data or upload the latest workbooks, then select roles to begin.'
       }}
     </p>
+    <UiButton v-if="datasetStore.hasDataset" class="mt-4" variant="primary" @click="uiStore.setSidebarOpen(true)">
+      Select roles
+    </UiButton>
   </div>
 
   <div v-else-if="!activeRole" class="empty-results">
@@ -20,61 +23,49 @@
   <div v-else class="space-y-4">
     <section class="page-panel overflow-hidden">
       <div class="border-b border-[var(--border-default)] px-4 py-3">
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div class="text-sm font-semibold text-[var(--text-primary)]">{{ activeRole.role }}</div>
-            <div class="mt-1 text-sm text-[var(--text-secondary)]">{{ activeRole.sector }} · {{ activeRole.track }}</div>
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="w-full lg:w-[28rem]">
+            <UiSelect v-model="rolePickerValue">
+              <option v-for="role in analyzedRoleOptions" :key="role.key" :value="role.key">{{ role.label }}</option>
+            </UiSelect>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="roleKey in results.roleKeys"
-              :key="roleKey"
-              class="rounded-[8px] border px-3 py-2 text-sm transition-colors"
-              :class="
-                explorerStore.activeRoleKey === roleKey
-                  ? 'border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--text-primary)]'
-                  : 'border-[var(--border-default)] bg-[var(--surface-default)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]'
-              "
-              type="button"
-              @click="explorerStore.setActiveRole(roleKey)"
-            >
-              {{ shortRoleLabel(results.roles[roleKey].role) }}
-            </button>
+          <div class="text-left lg:text-right">
+            <div class="text-base font-semibold text-[var(--text-primary)]">{{ activeRole.sector }}</div>
+            <div class="mt-1 text-sm text-[var(--text-secondary)]">{{ activeRole.track }}</div>
           </div>
         </div>
       </div>
 
-      <div class="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <section class="grid gap-4">
-          <div class="grid gap-3 sm:grid-cols-3">
-            <div class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-3">
-              <div class="text-xs text-[var(--text-muted)]">Skills</div>
-              <div class="mt-1 text-lg font-semibold text-[var(--text-primary)]">{{ activeRole.uniqueSkills.length }}</div>
-            </div>
-            <div class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-3">
-              <div class="text-xs text-[var(--text-muted)]">Work functions</div>
-              <div class="mt-1 text-lg font-semibold text-[var(--text-primary)]">{{ activeRole.cwf.length }}</div>
-            </div>
-            <div class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-3">
-              <div class="text-xs text-[var(--text-muted)]">TSC rows</div>
-              <div class="mt-1 text-lg font-semibold text-[var(--text-primary)]">{{ activeRole.tscs.length }}</div>
-            </div>
-          </div>
-
-          <div class="grid gap-4 lg:grid-cols-2">
-            <section>
-              <h3 class="text-sm font-semibold text-[var(--text-primary)]">Role description</h3>
-              <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                {{ activeRole.description || 'No role description available.' }}
-              </p>
-            </section>
-            <section>
-              <h3 class="text-sm font-semibold text-[var(--text-primary)]">Performance expectations</h3>
-              <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                {{ activeRole.performance || 'No performance expectations available.' }}
-              </p>
-            </section>
-          </div>
+      <div class="grid gap-4 px-4 py-4">
+        <section class="grid gap-4 lg:grid-cols-2">
+          <section>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">Role description</h3>
+            <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]" :style="descriptionExpanded ? undefined : clampStyle">
+              {{ activeRole.description || 'No role description available.' }}
+            </p>
+            <button
+              v-if="shouldClamp(activeRole.description)"
+              class="mt-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+              type="button"
+              @click="descriptionExpanded = !descriptionExpanded"
+            >
+              {{ descriptionExpanded ? 'Show less' : 'Read more' }}
+            </button>
+          </section>
+          <section>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">Performance expectations</h3>
+            <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]" :style="performanceExpanded ? undefined : clampStyle">
+              {{ activeRole.performance || 'No performance expectations available.' }}
+            </p>
+            <button
+              v-if="shouldClamp(activeRole.performance)"
+              class="mt-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+              type="button"
+              @click="performanceExpanded = !performanceExpanded"
+            >
+              {{ performanceExpanded ? 'Show less' : 'Read more' }}
+            </button>
+          </section>
         </section>
 
         <section v-if="activeRole.cwf.length" class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-4 py-4">
@@ -105,10 +96,9 @@
 
     <section class="table-shell">
       <div class="border-b border-[var(--border-default)] px-4 py-3">
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 class="text-sm font-semibold text-[var(--text-primary)]">Skills in this role</h3>
-            <p class="mt-1 text-sm text-[var(--text-secondary)]">Open any row in the inspector for detailed proficiency, knowledge, abilities, and TSC mappings.</p>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">Skills in this role ({{ activeRole.uniqueSkills.length }})</h3>
           </div>
           <div class="w-full max-w-sm">
             <UiInput v-model="skillQuery" placeholder="Filter skills within this role" />
@@ -162,17 +152,27 @@ import { computed, ref, watch } from 'vue';
 
 import UiButton from '../ui/UiButton.vue';
 import UiInput from '../ui/UiInput.vue';
+import UiSelect from '../ui/UiSelect.vue';
+import { formatRoleLabel } from '../../lib/skills-framework/utils';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
+import { useUiStore } from '../../stores/ui';
 
 const datasetStore = useDatasetStore();
 const explorerStore = useExplorerStore();
+const uiStore = useUiStore();
 
 const skillQuery = ref('');
-const cwfOpen = ref(true);
+const cwfOpen = ref(false);
+const descriptionExpanded = ref(false);
+const performanceExpanded = ref(false);
 
 const results = computed(() => explorerStore.analysisResults);
 const activeRoleKey = computed(() => explorerStore.activeRoleKey ?? '');
+const rolePickerValue = computed({
+  get: () => explorerStore.activeRoleKey ?? '',
+  set: (value: string) => explorerStore.setActiveRole(value || null),
+});
 const activeRole = computed(() => {
   if (!results.value || !explorerStore.activeRoleKey) {
     return null;
@@ -180,6 +180,18 @@ const activeRole = computed(() => {
 
   return results.value.roles[explorerStore.activeRoleKey] ?? null;
 });
+const analyzedRoleOptions = computed(() =>
+  results.value?.roleKeys.map((roleKey) => ({
+    key: roleKey,
+    label: formatRoleLabel(results.value!.roles[roleKey]),
+  })) ?? [],
+);
+const clampStyle = {
+  display: '-webkit-box',
+  overflow: 'hidden',
+  WebkitBoxOrient: 'vertical' as const,
+  WebkitLineClamp: '3',
+};
 
 const filteredSkills = computed(() => {
   const role = activeRole.value;
@@ -195,7 +207,9 @@ watch(
   () => explorerStore.activeRoleKey,
   () => {
     skillQuery.value = '';
-    cwfOpen.value = true;
+    cwfOpen.value = false;
+    descriptionExpanded.value = false;
+    performanceExpanded.value = false;
   },
 );
 
@@ -207,7 +221,7 @@ function isActiveSkill(skillTitle: string, roleKey: string) {
   return explorerStore.detail.kind === 'role-skill' && explorerStore.detail.skillTitle === skillTitle && explorerStore.detail.roleKey === roleKey;
 }
 
-function shortRoleLabel(role: string) {
-  return role.length > 28 ? `${role.slice(0, 28).trim()}...` : role;
+function shouldClamp(value: string | null | undefined) {
+  return Boolean(value && value.trim().length > 180);
 }
 </script>

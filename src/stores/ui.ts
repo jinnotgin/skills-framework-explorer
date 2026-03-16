@@ -5,7 +5,6 @@ interface UiState {
   sidebarOpen: boolean;
   dataModalOpen: boolean;
   detailOverlayOpen: boolean;
-  detailCollapsed: boolean;
   fileSectionExpanded: boolean;
   dragActive: boolean;
 }
@@ -16,7 +15,6 @@ export const useUiStore = defineStore('ui', {
     sidebarOpen: false,
     dataModalOpen: false,
     detailOverlayOpen: false,
-    detailCollapsed: false,
     fileSectionExpanded: false,
     dragActive: false,
   }),
@@ -36,9 +34,6 @@ export const useUiStore = defineStore('ui', {
     },
     setDetailOverlayOpen(value: boolean) {
       this.detailOverlayOpen = value;
-    },
-    setDetailCollapsed(value: boolean) {
-      this.detailCollapsed = value;
     },
     setFileSectionExpanded(value: boolean) {
       this.fileSectionExpanded = value;

@@ -1,5 +1,6 @@
 <template>
   <input
+    ref="inputElement"
     :value="modelValue"
     :placeholder="placeholder"
     :type="type"
@@ -9,6 +10,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+
 withDefaults(
   defineProps<{
     modelValue?: string;
@@ -25,4 +28,12 @@ withDefaults(
 defineEmits<{
   'update:modelValue': [value: string];
 }>();
+
+const inputElement = ref<HTMLInputElement | null>(null);
+
+defineExpose({
+  focus() {
+    inputElement.value?.focus();
+  },
+});
 </script>

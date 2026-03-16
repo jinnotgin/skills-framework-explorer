@@ -21,14 +21,8 @@
     <AppHeader @open-role-selector="uiStore.setSidebarOpen(true)" @open-data-modal="uiStore.setDataModalOpen(true)" />
 
     <main class="mx-auto max-w-[1600px] px-4 pb-24 pt-4 lg:px-6 lg:pb-6">
-      <section
-        class="min-w-0 transition-[padding-right] duration-150"
-        :class="{
-          'lg:pr-[27rem]': explorerStore.detail.open && !uiStore.detailCollapsed,
-          'lg:pr-14': explorerStore.detail.open && uiStore.detailCollapsed,
-        }"
-      >
-        <div v-if="datasetStore.hasDataset && !explorerStore.analysisResults" class="page-panel mb-4 px-5 py-4">
+      <section class="min-w-0 transition-[padding-right] duration-150" :class="{ 'lg:pr-[27rem]': explorerStore.detail.open }">
+        <div v-if="datasetStore.hasDataset && !datasetStore.isPreloading && !explorerStore.analysisResults" class="page-panel mb-4 px-5 py-4">
           <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div class="text-sm text-[var(--text-secondary)]">
               Open role selection to stage roles for analysis, then use the workspace and inspector to read the results.
@@ -39,21 +33,17 @@
           </div>
         </div>
 
-        <div v-if="explorerStore.analysisResults" class="page-panel mb-4 px-5 py-4">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <h1 class="text-xl font-semibold text-[var(--text-primary)]">{{ pageTitle }}</h1>
-              <p class="mt-1 text-sm text-[var(--text-secondary)]">{{ pageSummary }}</p>
-            </div>
-            <div class="flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--border-default)] pt-3 text-sm text-[var(--text-secondary)] lg:border-t-0 lg:pt-0">
-              <div><span class="font-semibold text-[var(--text-primary)]">{{ explorerStore.analysisResults.totalRoles }}</span> roles analysed</div>
-              <div><span class="font-semibold text-[var(--text-primary)]">{{ explorerStore.analysisResults.totalUniqueSkills }}</span> unique skills</div>
-              <div><span class="font-semibold text-[var(--text-primary)]">{{ explorerStore.analysisResults.totalTscs }}</span> TSC rows</div>
-            </div>
+        <div v-if="datasetStore.isPreloading" class="workspace-surface">
+          <div class="empty-results">
+            <div
+              class="h-10 w-10 animate-spin rounded-full border-2 border-[var(--border-default)] border-t-[var(--primary)]"
+              aria-hidden="true"
+            ></div>
+            <h2>Loading data</h2>
+            <p>Parsing workbooks and rebuilding the dataset.</p>
           </div>
         </div>
-
-        <div class="workspace-surface">
+        <div v-else class="workspace-surface">
           <RouterView />
         </div>
       </section>
@@ -68,8 +58,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue';
-import { RouterView, useRoute } from 'vue-router';
+import { onBeforeUnmount, onMounted } from 'vue';
+import { RouterView } from 'vue-router';
 
 import AppBottomNav from './components/layout/AppBottomNav.vue';
 import DataModal from './components/layout/DataModal.vue';
@@ -83,7 +73,6 @@ import { useDatasetStore } from './stores/dataset';
 import { useExplorerStore } from './stores/explorer';
 import { useUiStore } from './stores/ui';
 
-const route = useRoute();
 const datasetStore = useDatasetStore();
 const explorerStore = useExplorerStore();
 const uiStore = useUiStore();
@@ -93,26 +82,6 @@ useDatasetLoader();
 useUrlSync();
 
 let dragCounter = 0;
-
-const pageTitle = computed(() => {
-  if (route.name === 'skills') {
-    return 'Skill index';
-  }
-  if (route.name === 'compare') {
-    return 'Role comparison';
-  }
-  return 'Role workspace';
-});
-
-const pageSummary = computed(() => {
-  if (route.name === 'skills') {
-    return 'Search across the analysed skills and open one in the inspector.';
-  }
-  if (route.name === 'compare') {
-    return 'Compare two analysed roles and inspect the differences skill by skill.';
-  }
-  return 'Use the current analysis as a workbench for reading one role at a time.';
-});
 
 async function processFiles(files: File[]) {
   if (!files.length) {

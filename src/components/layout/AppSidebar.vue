@@ -26,7 +26,7 @@
             </div>
 
             <div class="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_14rem]">
-              <UiInput v-model="searchQuery" placeholder="Search roles, sectors, or tracks" />
+              <UiInput ref="searchInput" v-model="searchQuery" placeholder="Search roles, sectors, or tracks" />
               <UiSelect v-model="sectorFilter">
                 <option value="">All sectors</option>
                 <option v-for="sector in datasetStore.sectors" :key="sector" :value="sector">{{ sector }}</option>
@@ -126,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { ChevronRight, Files, X } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 
@@ -143,6 +143,7 @@ const uiStore = useUiStore();
 const router = useRouter();
 
 const expandedSectors = reactive(new Set<string>());
+const searchInput = ref<InstanceType<typeof UiInput> | null>(null);
 
 const searchQuery = computed({
   get: () => explorerStore.roleSearchQuery,
@@ -234,6 +235,18 @@ watch(
     }
   },
   { immediate: true },
+);
+
+watch(
+  () => uiStore.sidebarOpen,
+  async (isOpen) => {
+    if (!isOpen) {
+      return;
+    }
+
+    await nextTick();
+    searchInput.value?.focus();
+  },
 );
 
 function toggleSector(sector: string) {
