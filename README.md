@@ -49,6 +49,13 @@ The app supports two client-side data paths:
   - TSC to Unique Skill Mapping workbook with `TSC to Unique Skill Mapping`
   - Unique Skills List workbook with `Unique Skills List`
 
+
+## Deployment Base Path
+
+- Use `APP_BASE_PATH` to set the deployed base path for both routing/assets and preloaded dataset fetching.
+- Example for GitHub Pages project sites: `APP_BASE_PATH=skills-framework-explorer`.
+- Leave it unset for root deployment (`/`).
+
 ## Notes
 
 - Firebase Hosting now serves the Vite build output from `dist/`.
