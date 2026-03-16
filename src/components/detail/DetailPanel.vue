@@ -67,34 +67,47 @@
               <ChevronDown class="h-4 w-4 text-[var(--text-muted)] transition" :class="{ 'rotate-180': sectionOpen.levels }" />
             </button>
             <div v-show="sectionOpen.levels" class="mt-3">
-              <article v-for="level in roleSkillDetail.proficiencyLevels" :key="level" class="detail-card">
+              <div class="mb-3 flex flex-wrap gap-2">
+                <button
+                  v-for="level in roleSkillDetail.proficiencyLevels"
+                  :key="level"
+                  class="level-badge transition-colors"
+                  :class="{ 'border-[var(--primary)] bg-[var(--primary-soft)]': activeLevel === level }"
+                  type="button"
+                  @click="activeLevel = level"
+                >
+                  {{ level }}
+                </button>
+              </div>
+
+              <article v-if="currentRoleSkillLevel" class="detail-card">
                 <div class="detail-card-header">
-                  <span class="level-badge">{{ level }}</span>
-                  <div class="text-sm font-semibold text-[var(--text-primary)]">Level {{ level }}</div>
+                  <span class="level-badge">{{ activeLevel }}</span>
+                  <div class="text-sm font-semibold text-[var(--text-primary)]">Level {{ activeLevel }}</div>
                 </div>
-                <p v-if="roleSkillDetail.proficiencies[level]?.proficiencyDescription" class="detail-blurb">
-                  {{ roleSkillDetail.proficiencies[level]?.proficiencyDescription }}
+                <p v-if="currentRoleSkillLevel.proficiencyDescription" class="detail-blurb">
+                  {{ currentRoleSkillLevel.proficiencyDescription }}
                 </p>
 
-                <div v-if="roleSkillDetail.proficiencies[level]?.knowledgeItems.length" class="detail-list-block">
+                <div v-if="currentRoleSkillLevel.knowledgeItems.length" class="detail-list-block">
                   <div class="detail-list-heading">Knowledge</div>
                   <ul class="detail-list">
-                    <li v-for="item in roleSkillDetail.proficiencies[level]?.knowledgeItems" :key="item">{{ item }}</li>
+                    <li v-for="item in currentRoleSkillLevel.knowledgeItems" :key="item">{{ item }}</li>
                   </ul>
                 </div>
 
-                <div v-if="roleSkillDetail.proficiencies[level]?.abilityItems.length" class="detail-list-block">
+                <div v-if="currentRoleSkillLevel.abilityItems.length" class="detail-list-block">
                   <div class="detail-list-heading">Abilities</div>
                   <ul class="detail-list">
-                    <li v-for="item in roleSkillDetail.proficiencies[level]?.abilityItems" :key="item">{{ item }}</li>
+                    <li v-for="item in currentRoleSkillLevel.abilityItems" :key="item">{{ item }}</li>
                   </ul>
                 </div>
 
-                <div v-if="roleSkillDetail.proficiencies[level]?.tscs.length" class="detail-list-block">
+                <div v-if="currentRoleSkillLevel.tscs.length" class="detail-list-block">
                   <div class="detail-list-heading">Related TSCs</div>
                   <div class="grid gap-2">
                     <div
-                      v-for="tsc in roleSkillDetail.proficiencies[level]?.tscs"
+                      v-for="tsc in currentRoleSkillLevel.tscs"
                       :key="`${tsc.code}-${tsc.proficiency}`"
                       class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-secondary)]"
                     >
@@ -135,32 +148,45 @@
               <ChevronDown class="h-4 w-4 text-[var(--text-muted)] transition" :class="{ 'rotate-180': sectionOpen.levels }" />
             </button>
             <div v-show="sectionOpen.levels" class="mt-3">
-              <article v-for="level in compareSkillDetail.levels" :key="level.level" class="detail-card">
-                <div class="detail-card-header">
-                  <span class="level-badge">{{ level.level }}</span>
-                  <div class="text-sm font-semibold text-[var(--text-primary)]">Level {{ level.level }}</div>
-                </div>
-                <p v-if="level.proficiencyDescription" class="detail-blurb">{{ level.proficiencyDescription }}</p>
+              <div class="mb-3 flex flex-wrap gap-2">
+                <button
+                  v-for="level in compareSkillDetail.levels"
+                  :key="level.level"
+                  class="level-badge transition-colors"
+                  :class="{ 'border-[var(--primary)] bg-[var(--primary-soft)]': activeLevel === level.level }"
+                  type="button"
+                  @click="activeLevel = level.level"
+                >
+                  {{ level.level }}
+                </button>
+              </div>
 
-                <div v-if="level.knowledgeItems.length" class="detail-list-block">
+              <article v-if="currentCompareLevel" class="detail-card">
+                <div class="detail-card-header">
+                  <span class="level-badge">{{ currentCompareLevel.level }}</span>
+                  <div class="text-sm font-semibold text-[var(--text-primary)]">Level {{ currentCompareLevel.level }}</div>
+                </div>
+                <p v-if="currentCompareLevel.proficiencyDescription" class="detail-blurb">{{ currentCompareLevel.proficiencyDescription }}</p>
+
+                <div v-if="currentCompareLevel.knowledgeItems.length" class="detail-list-block">
                   <div class="detail-list-heading">Knowledge</div>
                   <ul class="detail-list">
-                    <li v-for="item in level.knowledgeItems" :key="item">{{ item }}</li>
+                    <li v-for="item in currentCompareLevel.knowledgeItems" :key="item">{{ item }}</li>
                   </ul>
                 </div>
 
-                <div v-if="level.abilityItems.length" class="detail-list-block">
+                <div v-if="currentCompareLevel.abilityItems.length" class="detail-list-block">
                   <div class="detail-list-heading">Abilities</div>
                   <ul class="detail-list">
-                    <li v-for="item in level.abilityItems" :key="item">{{ item }}</li>
+                    <li v-for="item in currentCompareLevel.abilityItems" :key="item">{{ item }}</li>
                   </ul>
                 </div>
 
-                <div v-if="level.tscs.length" class="detail-list-block">
+                <div v-if="currentCompareLevel.tscs.length" class="detail-list-block">
                   <div class="detail-list-heading">Related TSCs</div>
                   <div class="grid gap-2">
                     <div
-                      v-for="tsc in level.tscs"
+                      v-for="tsc in currentCompareLevel.tscs"
                       :key="`${tsc.code}-${tsc.proficiency}`"
                       class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-secondary)]"
                     >
@@ -211,34 +237,47 @@
               <ChevronDown class="h-4 w-4 text-[var(--text-muted)] transition" :class="{ 'rotate-180': sectionOpen.levels }" />
             </button>
             <div v-show="sectionOpen.levels" class="mt-3">
-              <article v-for="level in skillCentricDetail.proficiencyLevels" :key="level" class="detail-card">
+              <div class="mb-3 flex flex-wrap gap-2">
+                <button
+                  v-for="level in skillCentricDetail.proficiencyLevels"
+                  :key="level"
+                  class="level-badge transition-colors"
+                  :class="{ 'border-[var(--primary)] bg-[var(--primary-soft)]': activeLevel === level }"
+                  type="button"
+                  @click="activeLevel = level"
+                >
+                  {{ level }}
+                </button>
+              </div>
+
+              <article v-if="currentSkillCentricLevel" class="detail-card">
                 <div class="detail-card-header">
-                  <span class="level-badge">{{ level }}</span>
-                  <div class="text-sm font-semibold text-[var(--text-primary)]">Level {{ level }}</div>
+                  <span class="level-badge">{{ activeLevel }}</span>
+                  <div class="text-sm font-semibold text-[var(--text-primary)]">Level {{ activeLevel }}</div>
                 </div>
-                <p v-if="skillCentricDetail.proficiencies[level]?.proficiencyDescription" class="detail-blurb">
-                  {{ skillCentricDetail.proficiencies[level]?.proficiencyDescription }}
+                <p v-if="currentSkillCentricLevel.proficiencyDescription" class="detail-blurb">
+                  {{ currentSkillCentricLevel.proficiencyDescription }}
                 </p>
 
-                <div v-if="skillCentricDetail.proficiencies[level]?.knowledgeItems.length" class="detail-list-block">
+                <div v-if="currentSkillCentricLevel.knowledgeItems.length" class="detail-list-block">
                   <div class="detail-list-heading">Knowledge</div>
                   <ul class="detail-list">
-                    <li v-for="item in skillCentricDetail.proficiencies[level]?.knowledgeItems" :key="item">{{ item }}</li>
+                    <li v-for="item in currentSkillCentricLevel.knowledgeItems" :key="item">{{ item }}</li>
                   </ul>
                 </div>
 
-                <div v-if="skillCentricDetail.proficiencies[level]?.abilityItems.length" class="detail-list-block">
+                <div v-if="currentSkillCentricLevel.abilityItems.length" class="detail-list-block">
                   <div class="detail-list-heading">Abilities</div>
                   <ul class="detail-list">
-                    <li v-for="item in skillCentricDetail.proficiencies[level]?.abilityItems" :key="item">{{ item }}</li>
+                    <li v-for="item in currentSkillCentricLevel.abilityItems" :key="item">{{ item }}</li>
                   </ul>
                 </div>
 
-                <div v-if="skillCentricDetail.proficiencies[level]?.tscs.length" class="detail-list-block">
+                <div v-if="currentSkillCentricLevel.tscs.length" class="detail-list-block">
                   <div class="detail-list-heading">Related TSCs</div>
                   <div class="grid gap-2">
                     <div
-                      v-for="tsc in skillCentricDetail.proficiencies[level]?.tscs"
+                      v-for="tsc in currentSkillCentricLevel.tscs"
                       :key="`${tsc.code}-${tsc.proficiency}`"
                       class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-secondary)]"
                     >
@@ -257,7 +296,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { ChevronDown, PanelRightClose, PanelRightOpen, X } from 'lucide-vue-next';
 
 import { sortLevels } from '../../lib/skills-framework/utils';
@@ -272,6 +311,7 @@ const sectionOpen = reactive({
   roles: true,
   levels: true,
 });
+const activeLevel = ref('');
 
 const analysisResults = computed(() => explorerStore.analysisResults);
 const detail = computed(() => explorerStore.detail);
@@ -361,6 +401,45 @@ const skillCentricDetail = computed(() => {
     roles,
   };
 });
+
+const currentRoleSkillLevel = computed(() =>
+  roleSkillDetail.value && activeLevel.value ? roleSkillDetail.value.proficiencies[activeLevel.value] ?? null : null,
+);
+
+const currentCompareLevel = computed(() =>
+  compareSkillDetail.value && activeLevel.value
+    ? compareSkillDetail.value.levels.find((level) => level.level === activeLevel.value) ?? null
+    : null,
+);
+
+const currentSkillCentricLevel = computed(() =>
+  skillCentricDetail.value && activeLevel.value ? skillCentricDetail.value.proficiencies[activeLevel.value] ?? null : null,
+);
+
+watch(
+  [
+    () => roleSkillDetail.value?.proficiencyLevels,
+    () => compareSkillDetail.value?.levels,
+    () => skillCentricDetail.value?.proficiencyLevels,
+  ],
+  () => {
+    const nextLevels =
+      roleSkillDetail.value?.proficiencyLevels ??
+      compareSkillDetail.value?.levels.map((level) => level.level) ??
+      skillCentricDetail.value?.proficiencyLevels ??
+      [];
+
+    if (!nextLevels.length) {
+      activeLevel.value = '';
+      return;
+    }
+
+    if (!nextLevels.includes(activeLevel.value)) {
+      activeLevel.value = nextLevels[0] ?? '';
+    }
+  },
+  { immediate: true },
+);
 
 function toggleSection(section: keyof typeof sectionOpen) {
   sectionOpen[section] = !sectionOpen[section];
