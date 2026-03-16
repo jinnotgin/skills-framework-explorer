@@ -165,8 +165,24 @@ select {
     @apply mt-4;
   }
 
+  .detail-list-block.knowledge {
+    @apply px-0 py-0;
+  }
+
+  .detail-list-block.ability {
+    @apply px-0 py-0;
+  }
+
   .detail-list-heading {
     @apply mb-2 text-xs font-medium text-[var(--text-muted)];
+  }
+
+  .detail-list-heading.knowledge {
+    @apply text-[var(--text-secondary)];
+  }
+
+  .detail-list-heading.ability {
+    @apply text-[var(--text-secondary)];
   }
 
   .detail-list {
@@ -175,6 +191,14 @@ select {
 
   .detail-list li {
     @apply rounded-[8px] bg-[var(--surface-muted)] px-3 py-3 text-sm leading-6 text-[var(--text-secondary)];
+  }
+
+  .detail-list-block.knowledge .detail-list li {
+    @apply border border-[var(--border-default)] bg-[var(--surface-default)];
+  }
+
+  .detail-list-block.ability .detail-list li {
+    @apply border border-[var(--border-default)] bg-[var(--surface-default)] text-[var(--text-secondary)];
   }
 
   .table-shell {

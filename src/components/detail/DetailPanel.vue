@@ -89,15 +89,15 @@
                   {{ currentRoleSkillLevel.proficiencyDescription }}
                 </p>
 
-                <div v-if="currentRoleSkillLevel.knowledgeItems.length" class="detail-list-block">
-                  <div class="detail-list-heading">Knowledge</div>
+                <div v-if="currentRoleSkillLevel.knowledgeItems.length" class="detail-list-block knowledge">
+                  <div class="detail-list-heading knowledge">📚 Knowledge ({{ currentRoleSkillLevel.knowledgeItems.length }})</div>
                   <ul class="detail-list">
                     <li v-for="item in currentRoleSkillLevel.knowledgeItems" :key="item">{{ item }}</li>
                   </ul>
                 </div>
 
-                <div v-if="currentRoleSkillLevel.abilityItems.length" class="detail-list-block">
-                  <div class="detail-list-heading">Abilities</div>
+                <div v-if="currentRoleSkillLevel.abilityItems.length" class="detail-list-block ability">
+                  <div class="detail-list-heading ability">⚡ Abilities ({{ currentRoleSkillLevel.abilityItems.length }})</div>
                   <ul class="detail-list">
                     <li v-for="item in currentRoleSkillLevel.abilityItems" :key="item">{{ item }}</li>
                   </ul>
@@ -168,15 +168,15 @@
                 </div>
                 <p v-if="currentCompareLevel.proficiencyDescription" class="detail-blurb">{{ currentCompareLevel.proficiencyDescription }}</p>
 
-                <div v-if="currentCompareLevel.knowledgeItems.length" class="detail-list-block">
-                  <div class="detail-list-heading">Knowledge</div>
+                <div v-if="currentCompareLevel.knowledgeItems.length" class="detail-list-block knowledge">
+                  <div class="detail-list-heading knowledge">📚 Knowledge ({{ currentCompareLevel.knowledgeItems.length }})</div>
                   <ul class="detail-list">
                     <li v-for="item in currentCompareLevel.knowledgeItems" :key="item">{{ item }}</li>
                   </ul>
                 </div>
 
-                <div v-if="currentCompareLevel.abilityItems.length" class="detail-list-block">
-                  <div class="detail-list-heading">Abilities</div>
+                <div v-if="currentCompareLevel.abilityItems.length" class="detail-list-block ability">
+                  <div class="detail-list-heading ability">⚡ Abilities ({{ currentCompareLevel.abilityItems.length }})</div>
                   <ul class="detail-list">
                     <li v-for="item in currentCompareLevel.abilityItems" :key="item">{{ item }}</li>
                   </ul>
@@ -259,15 +259,15 @@
                   {{ currentSkillCentricLevel.proficiencyDescription }}
                 </p>
 
-                <div v-if="currentSkillCentricLevel.knowledgeItems.length" class="detail-list-block">
-                  <div class="detail-list-heading">Knowledge</div>
+                <div v-if="currentSkillCentricLevel.knowledgeItems.length" class="detail-list-block knowledge">
+                  <div class="detail-list-heading knowledge">📚 Knowledge ({{ currentSkillCentricLevel.knowledgeItems.length }})</div>
                   <ul class="detail-list">
                     <li v-for="item in currentSkillCentricLevel.knowledgeItems" :key="item">{{ item }}</li>
                   </ul>
                 </div>
 
-                <div v-if="currentSkillCentricLevel.abilityItems.length" class="detail-list-block">
-                  <div class="detail-list-heading">Abilities</div>
+                <div v-if="currentSkillCentricLevel.abilityItems.length" class="detail-list-block ability">
+                  <div class="detail-list-heading ability">⚡ Abilities ({{ currentSkillCentricLevel.abilityItems.length }})</div>
                   <ul class="detail-list">
                     <li v-for="item in currentSkillCentricLevel.abilityItems" :key="item">{{ item }}</li>
                   </ul>
