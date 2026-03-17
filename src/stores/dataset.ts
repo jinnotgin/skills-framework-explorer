@@ -31,7 +31,8 @@ interface DatasetState {
   roleByKey: Record<RoleKey, RoleSummary>;
   sectorsCatalog: string[];
   globalSkillsIndex: Record<string, GlobalSkillAnalysis>;
-  globalSkillTitles: string[];
+  globalSkillKeys: string[];
+  globalSkillsResultsCache: AnalysisResults | null;
 }
 
 function emptyWorkbookStatus(): Record<WorkbookKind, WorkbookStatus> {
@@ -63,13 +64,19 @@ function buildRoleLookup(roles: RoleSummary[]) {
 function skillIndexToMap(skills: SkillIndexRecord[]) {
   const globalSkillsIndex: Record<string, GlobalSkillAnalysis> = {};
   for (const skill of skills) {
-    globalSkillsIndex[skill.title] = skill;
+    globalSkillsIndex[skill.skillKey] = skill;
   }
 
   return {
     globalSkillsIndex,
-    globalSkillTitles: skills.map((skill) => skill.title).sort((left, right) => left.localeCompare(right)),
+    globalSkillKeys: [...skills]
+      .sort((left, right) => left.title.localeCompare(right.title) || left.subtitle.localeCompare(right.subtitle) || left.skillKey.localeCompare(right.skillKey))
+      .map((skill) => skill.skillKey),
   };
+}
+
+function buildCachedGlobalSkillsResults(skills: SkillIndexRecord[], roleKeys: RoleKey[]): AnalysisResults | null {
+  return buildAnalysisResultsFromSkillIndex(skills, roleKeys);
 }
 
 export const useDatasetStore = defineStore('dataset', {
@@ -87,7 +94,8 @@ export const useDatasetStore = defineStore('dataset', {
     roleByKey: {},
     sectorsCatalog: [],
     globalSkillsIndex: {},
-    globalSkillTitles: [],
+    globalSkillKeys: [],
+    globalSkillsResultsCache: null,
   }),
   getters: {
     hasDataset: (state) => state.rolesCatalog.length > 0,
@@ -113,21 +121,30 @@ export const useDatasetStore = defineStore('dataset', {
       }
       return '';
     },
-    globalSkillsResults(state): AnalysisResults | null {
-      const skills = state.globalSkillTitles.map((title) => state.globalSkillsIndex[title]).filter(Boolean);
-      return buildAnalysisResultsFromSkillIndex(skills, state.rolesCatalog.map((role) => role.key));
-    },
+    globalSkillsResults: (state): AnalysisResults | null => state.globalSkillsResultsCache,
   },
   actions: {
     clearGlobalSkillsCache() {
       this.globalSkillsIndex = {};
-      this.globalSkillTitles = [];
+      this.globalSkillKeys = [];
+      this.globalSkillsResultsCache = null;
+    },
+    cacheGlobalSkills(skills: SkillIndexRecord[]) {
+      const { globalSkillsIndex, globalSkillKeys } = skillIndexToMap(skills);
+      this.globalSkillsIndex = globalSkillsIndex;
+      this.globalSkillKeys = globalSkillKeys;
+      this.globalSkillsResultsCache = buildCachedGlobalSkillsResults(skills, this.rolesCatalog.map((role) => role.key));
     },
     setRoleCatalog(roles: RoleSummary[]) {
       this.rolesCatalog = roles;
       const { roleByKey, sectors } = buildRoleLookup(roles);
       this.roleByKey = roleByKey;
       this.sectorsCatalog = sectors;
+
+      if (this.globalSkillKeys.length) {
+        const skills = this.globalSkillKeys.map((skillKey) => this.globalSkillsIndex[skillKey]).filter(Boolean);
+        this.globalSkillsResultsCache = buildCachedGlobalSkillsResults(skills, this.rolesCatalog.map((role) => role.key));
+      }
     },
     setDataset(dataset: NormalizedDataset | null, mode: ImportMode, workbookStatus?: Record<WorkbookKind, WorkbookStatus>) {
       this.dataset = dataset;
@@ -203,7 +220,7 @@ export const useDatasetStore = defineStore('dataset', {
       }
     },
     async ensureGlobalSkillsLoaded(force = false) {
-      if (!force && this.globalSkillTitles.length) {
+      if (!force && this.globalSkillKeys.length) {
         return this.globalSkillsResults;
       }
 
@@ -217,11 +234,9 @@ export const useDatasetStore = defineStore('dataset', {
             return null;
           }
 
-          const skills = results.uniqueSkillTitles.map((title) => results.uniqueSkills[title]);
-          const { globalSkillsIndex, globalSkillTitles } = skillIndexToMap(skills);
-          this.globalSkillsIndex = globalSkillsIndex;
-          this.globalSkillTitles = globalSkillTitles;
-          return results;
+          const skills = results.uniqueSkillKeys.map((skillKey) => results.uniqueSkills[skillKey]);
+          this.cacheGlobalSkills(skills);
+          return this.globalSkillsResults;
         }
 
         if (this.importMode !== 'preloaded') {
@@ -230,9 +245,7 @@ export const useDatasetStore = defineStore('dataset', {
         }
 
         const skills = await preloadedDatasetRepository.getGlobalSkillsIndex();
-        const { globalSkillsIndex, globalSkillTitles } = skillIndexToMap(skills);
-        this.globalSkillsIndex = globalSkillsIndex;
-        this.globalSkillTitles = globalSkillTitles;
+        this.cacheGlobalSkills(skills);
         return this.globalSkillsResults;
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to load skill index';

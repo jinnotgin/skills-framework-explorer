@@ -26,7 +26,7 @@
   --warning-soft: #fef7e0;
   --danger: #d93025;
   --danger-soft: #fce8e6;
-  --overlay-scrim: rgba(32, 33, 36, 0.12);
+  --overlay-scrim: rgba(17, 24, 39, 0.56);
   --shadow-subtle: 0 10px 30px rgba(60, 64, 67, 0.08), 0 1px 3px rgba(60, 64, 67, 0.12);
 }
 

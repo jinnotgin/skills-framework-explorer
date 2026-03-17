@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 
 import { buildAnalysis, buildAnalysisFromRoleAnalyses } from '../lib/skills-framework/analysis';
 import { preloadedDatasetRepository } from '../lib/skills-framework/preloadedRepository';
-import type { AnalysisResults, CompareFilter, DetailState, NormalizedDataset, RoleKey } from '../lib/skills-framework/types';
+import type { AnalysisResults, CompareFilter, DetailState, NormalizedDataset, RoleKey, SkillKey } from '../lib/skills-framework/types';
 
 interface ExplorerState {
   selectedRoleKeys: RoleKey[];
@@ -27,6 +27,7 @@ function emptyDetailState(): DetailState {
   return {
     open: false,
     kind: null,
+    skillKey: '',
     skillTitle: '',
     roleKey: null,
     role1Key: null,
@@ -170,10 +171,11 @@ export const useExplorerStore = defineStore('explorer', {
 
       this.compareSelection = { role1, role2 };
     },
-    openRoleSkillDetail(skillTitle: string, roleKey: RoleKey) {
+    openRoleSkillDetail(skillKey: SkillKey, skillTitle: string, roleKey: RoleKey) {
       this.detail = {
         open: true,
         kind: 'role-skill',
+        skillKey,
         skillTitle,
         roleKey,
         role1Key: null,
@@ -181,10 +183,11 @@ export const useExplorerStore = defineStore('explorer', {
         focusedRoleKey: null,
       };
     },
-    openCompareSkillDetail(skillTitle: string, role1Key: RoleKey, role2Key: RoleKey) {
+    openCompareSkillDetail(skillKey: SkillKey, skillTitle: string, role1Key: RoleKey, role2Key: RoleKey) {
       this.detail = {
         open: true,
         kind: 'compare-skill',
+        skillKey,
         skillTitle,
         roleKey: null,
         role1Key,
@@ -192,10 +195,11 @@ export const useExplorerStore = defineStore('explorer', {
         focusedRoleKey: null,
       };
     },
-    openSkillCentricDetail(skillTitle: string, focusedRoleKey: RoleKey | null = null) {
+    openSkillCentricDetail(skillKey: SkillKey, skillTitle: string, focusedRoleKey: RoleKey | null = null) {
       this.detail = {
         open: true,
         kind: 'skill-centric',
+        skillKey,
         skillTitle,
         roleKey: null,
         role1Key: null,

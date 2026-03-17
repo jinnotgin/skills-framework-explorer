@@ -124,11 +124,14 @@
         <tbody>
           <tr
             v-for="skill in filteredSkills"
-            :key="skill.title"
-            :class="{ active: isActiveSkill(skill.title, activeRoleKey) }"
-            @click="openDetail(skill.title, activeRoleKey)"
+            :key="skill.skillKey"
+            :class="{ active: isActiveSkill(skill.skillKey, activeRoleKey) }"
+            @click="openDetail(skill.skillKey, skill.title, activeRoleKey)"
           >
-            <td class="font-medium text-[var(--text-primary)]">{{ skill.title }}</td>
+            <td>
+              <div class="font-medium text-[var(--text-primary)]">{{ skill.title }}</div>
+              <div v-if="skill.subtitle" class="mt-1 text-xs text-[var(--text-muted)]">{{ skill.subtitle }}</div>
+            </td>
             <td>{{ skill.skillType || 'N/A' }}</td>
             <td>
               <div class="flex flex-wrap gap-2">
@@ -219,12 +222,12 @@ watch(
   },
 );
 
-function openDetail(skillTitle: string, roleKey: string) {
-  explorerStore.openRoleSkillDetail(skillTitle, roleKey);
+function openDetail(skillKey: string, skillTitle: string, roleKey: string) {
+  explorerStore.openRoleSkillDetail(skillKey, skillTitle, roleKey);
 }
 
-function isActiveSkill(skillTitle: string, roleKey: string) {
-  return explorerStore.detail.kind === 'role-skill' && explorerStore.detail.skillTitle === skillTitle && explorerStore.detail.roleKey === roleKey;
+function isActiveSkill(skillKey: string, roleKey: string) {
+  return explorerStore.detail.kind === 'role-skill' && explorerStore.detail.skillKey === skillKey && explorerStore.detail.roleKey === roleKey;
 }
 
 function shouldClamp(value: string | null | undefined) {

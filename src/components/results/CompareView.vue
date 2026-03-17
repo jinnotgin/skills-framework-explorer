@@ -79,11 +79,14 @@
         <tbody>
           <tr
             v-for="row in filteredRows"
-            :key="row.title"
-            :class="{ active: isActiveRow(row.title) }"
-            @click="openCompareDetail(row.title)"
+            :key="row.skillKey"
+            :class="{ active: isActiveRow(row.skillKey) }"
+            @click="openCompareDetail(row.skillKey, row.title)"
           >
-            <td class="font-medium text-[var(--text-primary)]">{{ row.title }}</td>
+            <td>
+              <div class="font-medium text-[var(--text-primary)]">{{ row.title }}</div>
+              <div v-if="row.subtitle" class="mt-1 text-xs text-[var(--text-muted)]">{{ row.subtitle }}</div>
+            </td>
             <td>
               <div v-if="row.skill1" class="space-y-2">
                 <div class="flex flex-wrap gap-2">
@@ -239,15 +242,15 @@ function highlightRight(row: (typeof compareRows.value)[number], level: string) 
   return leftMax !== null && rightMax !== null && rightMax > leftMax && current === rightMax;
 }
 
-function isActiveRow(skillTitle: string) {
-  return explorerStore.detail.kind === 'compare-skill' && explorerStore.detail.skillTitle === skillTitle;
+function isActiveRow(skillKey: string) {
+  return explorerStore.detail.kind === 'compare-skill' && explorerStore.detail.skillKey === skillKey;
 }
 
-function openCompareDetail(skillTitle: string) {
+function openCompareDetail(skillKey: string, skillTitle: string) {
   if (!role1.value || !role2.value) {
     return;
   }
 
-  explorerStore.openCompareSkillDetail(skillTitle, role1.value, role2.value);
+  explorerStore.openCompareSkillDetail(skillKey, skillTitle, role1.value, role2.value);
 }
 </script>

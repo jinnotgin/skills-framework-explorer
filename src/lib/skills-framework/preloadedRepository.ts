@@ -18,7 +18,7 @@ import type {
 } from './types';
 
 export const PRELOADED_DB_NAME = 'sfe_data';
-export const PRELOADED_SCHEMA_VERSION = 1;
+export const PRELOADED_SCHEMA_VERSION = 3;
 export const PRELOADED_STORE_PREFIX = 'sfe';
 
 const APP_NAME = 'skills-framework-explorer';
@@ -45,7 +45,7 @@ interface FallbackCache {
   roles: RoleCatalogRecord[];
   roleAnalysesByKey: Map<RoleKey, RoleAnalysisRecord>;
   skillIndex: SkillIndexRecord[];
-  skillIndexByTitle: Map<string, SkillIndexRecord>;
+  skillIndexByKey: Map<string, SkillIndexRecord>;
 }
 
 class PreloadedDatasetDatabase extends Dexie {
@@ -62,7 +62,7 @@ class PreloadedDatasetDatabase extends Dexie {
       [STORES.roles]: '&roleKey, sector, role, track',
       [STORES.roleCwf]: '&roleKey',
       [STORES.roleAnalysis]: '&roleKey',
-      [STORES.skillIndex]: '&title',
+      [STORES.skillIndex]: '&skillKey, title',
     });
 
     this.meta = this.table(STORES.meta);
@@ -121,7 +121,7 @@ function buildPreloadedReadModels(dataset: NormalizedDataset): PreloadedReadMode
     roleKey,
     ...analysis.roles[roleKey],
   }));
-  const skillIndexRecords = skillIndex.uniqueSkillTitles.map((title) => skillIndex.uniqueSkills[title]);
+  const skillIndexRecords = skillIndex.uniqueSkillKeys.map((skillKey) => skillIndex.uniqueSkills[skillKey]);
 
   return {
     generatedAt: dataset.generatedAt || '',
@@ -238,7 +238,7 @@ export class PreloadedDatasetRepository {
       roles: models.roles,
       roleAnalysesByKey: new Map(models.roleAnalysis.map((role) => [role.roleKey, role])),
       skillIndex: [...models.skillIndex],
-      skillIndexByTitle: new Map(models.skillIndex.map((skill) => [skill.title, skill])),
+      skillIndexByKey: new Map(models.skillIndex.map((skill) => [skill.skillKey, skill])),
     };
   }
 
@@ -329,25 +329,29 @@ export class PreloadedDatasetRepository {
 
   async getGlobalSkillsIndex(): Promise<SkillIndexRecord[]> {
     if (this.source === 'fallback-memory') {
-      return [...(this.fallbackCache?.skillIndex ?? [])].sort((left, right) => left.title.localeCompare(right.title));
+      return [...(this.fallbackCache?.skillIndex ?? [])].sort(
+        (left, right) => left.title.localeCompare(right.title) || left.subtitle.localeCompare(right.subtitle) || left.skillKey.localeCompare(right.skillKey),
+      );
     }
 
     const db = await this.openDatabase();
     const skills = await db.skillIndex.toArray();
-    return skills.sort((left, right) => left.title.localeCompare(right.title));
+    return skills.sort(
+      (left, right) => left.title.localeCompare(right.title) || left.subtitle.localeCompare(right.subtitle) || left.skillKey.localeCompare(right.skillKey),
+    );
   }
 
-  async getGlobalSkill(title: string): Promise<SkillIndexRecord | null> {
-    if (!title) {
+  async getGlobalSkill(skillKey: string): Promise<SkillIndexRecord | null> {
+    if (!skillKey) {
       return null;
     }
 
     if (this.source === 'fallback-memory') {
-      return this.fallbackCache?.skillIndexByTitle.get(title) ?? null;
+      return this.fallbackCache?.skillIndexByKey.get(skillKey) ?? null;
     }
 
     const db = await this.openDatabase();
-    return (await db.skillIndex.get(title)) ?? null;
+    return (await db.skillIndex.get(skillKey)) ?? null;
   }
 
   async resetForTests(): Promise<void> {

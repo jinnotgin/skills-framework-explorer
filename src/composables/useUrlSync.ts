@@ -75,8 +75,24 @@ export function useUrlSync() {
     }
 
     if (routeName.value === 'skills' && typeof route.query.skill === 'string') {
+      if (!explorerStore.selectedRoleKeys.length) {
+        await datasetStore.ensureGlobalSkillsLoaded();
+      }
+
+      const results =
+        routeName.value === 'skills' && !explorerStore.selectedRoleKeys.length ? datasetStore.globalSkillsResults : explorerStore.analysisResults;
+      const directMatch = results?.uniqueSkills[route.query.skill] ?? null;
+      const titleMatches =
+        directMatch || !results
+          ? []
+          : results.uniqueSkillKeys
+              .map((skillKey) => results.uniqueSkills[skillKey])
+              .filter((skill) => skill.title === route.query.skill);
       const focusedRoleKey = typeof route.query.role === 'string' ? route.query.role : null;
-      explorerStore.openSkillCentricDetail(route.query.skill, focusedRoleKey);
+      const resolvedSkill = directMatch ?? (titleMatches.length === 1 ? titleMatches[0] : null);
+      if (resolvedSkill) {
+        explorerStore.openSkillCentricDetail(resolvedSkill.skillKey, resolvedSkill.title, focusedRoleKey);
+      }
     }
   };
 
@@ -146,8 +162,8 @@ export function useUrlSync() {
         if (state.skillSearchQuery) {
           query.q = state.skillSearchQuery;
         }
-        if (state.detail.kind === 'skill-centric' && state.detail.skillTitle) {
-          query.skill = state.detail.skillTitle;
+        if (state.detail.kind === 'skill-centric' && state.detail.skillKey) {
+          query.skill = state.detail.skillKey;
           if (state.detail.focusedRoleKey) {
             query.role = state.detail.focusedRoleKey;
           }

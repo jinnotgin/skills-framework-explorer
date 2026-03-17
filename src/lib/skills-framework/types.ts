@@ -1,5 +1,6 @@
 export type RawRow = Record<string, unknown>;
 export type RoleKey = string;
+export type SkillKey = string;
 export type WorkbookKind = 'framework' | 'tscMap' | 'unique';
 export type ImportMode = 'none' | 'preloaded' | 'upload';
 export type CompareFilter = 'all' | 'shared' | 'diff' | 'role1' | 'role2';
@@ -47,6 +48,7 @@ export interface CriticalWorkFunction {
 
 export interface SkillTsc {
   code: string;
+  sector: string;
   title: string;
   type: string;
   proficiency: string;
@@ -69,7 +71,10 @@ export interface ProficiencyDetail {
 }
 
 export interface UniqueSkillAnalysis {
+  skillKey: SkillKey;
+  combinedFamilies: string[];
   title: string;
+  subtitle: string;
   description: string;
   skillType: string;
   isEmerging: boolean;
@@ -89,11 +94,15 @@ export interface SkillRoleReference {
 }
 
 export interface GlobalSkillAnalysis {
+  skillKey: SkillKey;
+  combinedFamilies: string[];
   title: string;
+  subtitle: string;
   description: string;
   roles: SkillRoleReference[];
   proficiencies: Record<string, ProficiencyDetail>;
   proficiencyLevels: string[];
+  tscs: SkillTsc[];
 }
 
 export interface RoleAnalysis {
@@ -111,13 +120,14 @@ export interface AnalysisResults {
   roles: Record<RoleKey, RoleAnalysis>;
   roleKeys: RoleKey[];
   uniqueSkills: Record<string, GlobalSkillAnalysis>;
-  uniqueSkillTitles: string[];
+  uniqueSkillKeys: SkillKey[];
   totalRoles: number;
   totalUniqueSkills: number;
   totalTscs: number;
 }
 
 export interface TscInfoEntry {
+  type: string;
   title: string;
   description: string;
   category: string;
@@ -147,6 +157,7 @@ export interface NormalizedDataset extends DatasetRawData {
 export interface DetailState {
   open: boolean;
   kind: DetailKind | null;
+  skillKey: SkillKey;
   skillTitle: string;
   roleKey: RoleKey | null;
   role1Key: RoleKey | null;
@@ -155,7 +166,9 @@ export interface DetailState {
 }
 
 export interface CompareSkillRow {
+  skillKey: SkillKey;
   title: string;
+  subtitle: string;
   skill1: UniqueSkillAnalysis | null;
   skill2: UniqueSkillAnalysis | null;
   prof1: number[];

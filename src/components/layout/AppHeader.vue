@@ -82,7 +82,7 @@ const statusText = computed(() => {
     return 'Syncing';
   }
   if (datasetStore.importMode === 'preloaded') {
-    return datasetStore.dataSource === 'fallback-memory' ? 'Fallback memory mode' : 'Ready';
+    return datasetStore.dataSource === 'fallback-memory' ? 'Ready (legacy)' : 'Ready';
   }
   if (datasetStore.loadedCount === 0) {
     return 'No files loaded';

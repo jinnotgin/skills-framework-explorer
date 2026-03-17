@@ -223,7 +223,7 @@ describe('preloaded dataset repository', () => {
       sfe_roles: '&roleKey, sector, role, track',
       sfe_role_cwf: '&roleKey',
       sfe_role_analysis: '&roleKey',
-      sfe_skill_index: '&title',
+      sfe_skill_index: '&skillKey, title',
     });
     await db.open();
     await db.table('sfe_role_analysis').clear();

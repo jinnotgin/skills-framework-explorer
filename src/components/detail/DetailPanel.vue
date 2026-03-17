@@ -4,6 +4,7 @@
       <div class="flex items-start justify-between gap-4 border-b border-[var(--border-default)] px-5 py-4">
         <div>
           <div class="text-sm font-semibold text-[var(--text-primary)]">{{ detail.skillTitle }}</div>
+          <div v-if="detailSubtitle" class="mt-1 text-xs text-[var(--text-muted)]">{{ detailSubtitle }}</div>
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -313,7 +314,7 @@ watch(
 );
 
 watch(
-  () => detail.value.skillTitle,
+  () => detail.value.skillKey,
   () => {
     sectionOpen.overview = true;
     sectionOpen.roles = true;
@@ -323,7 +324,7 @@ watch(
 );
 
 watch(
-  () => [detail.value.open, detail.value.kind, detail.value.skillTitle, detail.value.roleKey, detail.value.role1Key, detail.value.role2Key, detail.value.focusedRoleKey],
+  () => [detail.value.open, detail.value.kind, detail.value.skillKey, detail.value.roleKey, detail.value.role1Key, detail.value.role2Key, detail.value.focusedRoleKey],
   async () => {
     await nextTick();
     scrollContainer.value?.scrollTo({ top: 0, behavior: 'auto' });
@@ -331,11 +332,11 @@ watch(
 );
 
 const roleSkillDetail = computed(() => {
-  if (!analysisResults.value || detail.value.kind !== 'role-skill' || !detail.value.roleKey) {
+  if (!analysisResults.value || detail.value.kind !== 'role-skill' || !detail.value.roleKey || !detail.value.skillKey) {
     return null;
   }
 
-  return analysisResults.value.roles[detail.value.roleKey]?.uniqueSkills.find((skill) => skill.title === detail.value.skillTitle) ?? null;
+  return analysisResults.value.roles[detail.value.roleKey]?.uniqueSkills.find((skill) => skill.skillKey === detail.value.skillKey) ?? null;
 });
 
 const compareSkillDetail = computed(() => {
@@ -349,8 +350,8 @@ const compareSkillDetail = computed(() => {
     return null;
   }
 
-  const skill1 = role1.uniqueSkills.find((skill) => skill.title === detail.value.skillTitle) ?? null;
-  const skill2 = role2.uniqueSkills.find((skill) => skill.title === detail.value.skillTitle) ?? null;
+  const skill1 = role1.uniqueSkills.find((skill) => skill.skillKey === detail.value.skillKey) ?? null;
+  const skill2 = role2.uniqueSkills.find((skill) => skill.skillKey === detail.value.skillKey) ?? null;
   if (!skill1 && !skill2) {
     return null;
   }
@@ -361,6 +362,8 @@ const compareSkillDetail = computed(() => {
   ]);
 
   return {
+    title: skill1?.title || skill2?.title || detail.value.skillTitle,
+    subtitle: skill1?.subtitle || skill2?.subtitle || '',
     description: skill1?.description || skill2?.description || 'No description available.',
     role1Label: role1.role,
     role2Label: role2.role,
@@ -387,11 +390,11 @@ const compareSkillDetail = computed(() => {
 });
 
 const skillCentricDetail = computed(() => {
-  if (!analysisResults.value || detail.value.kind !== 'skill-centric') {
+  if (!analysisResults.value || detail.value.kind !== 'skill-centric' || !detail.value.skillKey) {
     return null;
   }
 
-  const skill = analysisResults.value.uniqueSkills[detail.value.skillTitle];
+  const skill = analysisResults.value.uniqueSkills[detail.value.skillKey];
   if (!skill) {
     return null;
   }
@@ -402,6 +405,8 @@ const skillCentricDetail = computed(() => {
     roles,
   };
 });
+
+const detailSubtitle = computed(() => roleSkillDetail.value?.subtitle || compareSkillDetail.value?.subtitle || skillCentricDetail.value?.subtitle || '');
 
 const currentRoleSkillLevel = computed(() =>
   roleSkillDetail.value && activeLevel.value ? roleSkillDetail.value.proficiencies[activeLevel.value] ?? null : null,

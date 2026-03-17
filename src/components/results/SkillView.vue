@@ -1,6 +1,9 @@
 <template>
   <div v-if="loadingState" class="empty-results">
-    <div class="empty-results-icon">⏳</div>
+    <div
+      class="h-10 w-10 animate-spin rounded-full border-2 border-[var(--border-default)] border-t-[var(--primary)]"
+      aria-hidden="true"
+    ></div>
     <h2>Loading skills</h2>
     <p>Preparing the skill index from the current dataset source.</p>
   </div>
@@ -44,13 +47,14 @@
       <div v-if="filteredSkills.length && uiStore.isMobile" class="divide-y divide-[var(--border-default)]">
         <button
           v-for="skill in filteredSkills"
-          :key="skill.title"
+          :key="skill.skillKey"
           class="block w-full px-4 py-4 text-left transition-colors hover:bg-[var(--surface-muted)]"
-          :class="{ 'bg-[var(--primary-soft)]': explorerStore.detail.kind === 'skill-centric' && explorerStore.detail.skillTitle === skill.title }"
+          :class="{ 'bg-[var(--primary-soft)]': explorerStore.detail.kind === 'skill-centric' && explorerStore.detail.skillKey === skill.skillKey }"
           type="button"
-          @click="explorerStore.openSkillCentricDetail(skill.title)"
+          @click="explorerStore.openSkillCentricDetail(skill.skillKey, skill.title)"
         >
           <div class="text-base font-semibold text-[var(--text-primary)]">{{ skill.title }}</div>
+          <div v-if="skill.subtitle" class="mt-1 text-xs text-[var(--text-muted)]">{{ skill.subtitle }}</div>
           <div class="mt-3 flex flex-wrap gap-2">
             <span
               v-for="role in skill.roles.slice(0, 2)"
@@ -78,12 +82,15 @@
         <tbody>
           <tr
             v-for="skill in filteredSkills"
-            :key="skill.title"
+            :key="skill.skillKey"
             class="skills-table-row"
-            :class="{ active: explorerStore.detail.kind === 'skill-centric' && explorerStore.detail.skillTitle === skill.title }"
-            @click="explorerStore.openSkillCentricDetail(skill.title)"
+            :class="{ active: explorerStore.detail.kind === 'skill-centric' && explorerStore.detail.skillKey === skill.skillKey }"
+            @click="explorerStore.openSkillCentricDetail(skill.skillKey, skill.title)"
           >
-            <td class="font-medium text-[var(--text-primary)]">{{ skill.title }}</td>
+            <td>
+              <div class="font-medium text-[var(--text-primary)]">{{ skill.title }}</div>
+              <div v-if="skill.subtitle" class="mt-1 text-xs text-[var(--text-muted)]">{{ skill.subtitle }}</div>
+            </td>
             <td>
               <div class="flex flex-wrap gap-2">
                 <span
@@ -139,7 +146,7 @@ const showAllSkills = computed(() => datasetStore.hasDataset && !explorerStore.s
 const results = computed(() => (showAllSkills.value ? datasetStore.globalSkillsResults : explorerStore.analysisResults));
 const loadingState = computed(() => explorerStore.isAnalysisLoading || (showAllSkills.value && datasetStore.isGlobalSkillsLoading));
 const allSkills = computed(() =>
-  results.value?.uniqueSkillTitles.map((title) => results.value!.uniqueSkills[title]) ?? [],
+  results.value?.uniqueSkillKeys.map((skillKey) => results.value!.uniqueSkills[skillKey]) ?? [],
 );
 
 const filteredSkills = computed(() => {

@@ -216,6 +216,7 @@ export function createNormalizedDataset(rawData: DatasetRawData | null): Normali
 
     if (!tscInfoByCode[code] && type) {
       tscInfoByCode[code] = {
+        type,
         title: safeStr(row['TSC_CCS Title']),
         description: safeStr(row['TSC_CCS Description']),
         category: safeStr(row['TSC_CCS Category']),
