@@ -22,6 +22,8 @@
           :to="view.to"
           class="rounded-[8px] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
           :class="{ 'bg-[var(--primary-soft)] text-[var(--primary-strong)]': route.path === view.to }"
+          @mouseenter="prefetchView(view.to)"
+          @focus="prefetchView(view.to)"
         >
           {{ view.label }}
         </RouterLink>
@@ -56,6 +58,7 @@ import { Menu } from 'lucide-vue-next';
 
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
+import { prefetchRouteComponents } from '../../router';
 
 defineEmits<{
   openRoleSelector: [];
@@ -71,6 +74,10 @@ const views = [
   { to: '/compare', label: 'Compare' },
   { to: '/skills', label: 'Skills' },
 ];
+
+function prefetchView(to: string) {
+  void prefetchRouteComponents(to);
+}
 
 const roleSelectorLabel = computed(() => {
   const count = explorerStore.selectedRoleKeys.length;
