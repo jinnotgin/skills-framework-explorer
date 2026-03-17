@@ -17,7 +17,7 @@
     </UiButton>
   </div>
 
-  <div v-else class="space-y-4">
+  <div v-else class="flex min-h-0 flex-1 flex-col gap-4">
     <section class="page-panel px-5 py-4">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex flex-col gap-2 text-sm text-[var(--text-secondary)] sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
@@ -43,7 +43,7 @@
       </div>
     </section>
 
-    <section class="table-shell">
+    <section class="table-shell flex min-h-0 flex-1 flex-col">
       <div v-if="filteredSkills.length && uiStore.isMobile" class="divide-y divide-[var(--border-default)]">
         <button
           v-for="skill in filteredSkills"
@@ -73,7 +73,7 @@
 
       <UiVirtualTable
         v-else-if="filteredSkills.length"
-        class="max-h-[min(78vh,56rem)]"
+        class="min-h-0 flex-1"
         table-class="compare-table skills-table"
         :items="filteredSkills"
         :item-height="92"

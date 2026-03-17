@@ -1,5 +1,5 @@
 <template>
-  <aside v-if="detail.open || uiStore.isMobile" class="detail-shell" :class="{ open: detail.open }">
+  <aside class="detail-shell" :class="{ open: detail.open }">
     <template v-if="detail.open">
       <div class="flex items-start justify-between gap-4 border-b border-[var(--border-default)] px-5 py-4">
         <div>

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen flex-col bg-[var(--bg-app)] text-[var(--text-primary)]">
+  <div class="flex min-h-screen flex-col bg-[var(--bg-app)] text-[var(--text-primary)] lg:h-[100dvh] lg:overflow-hidden">
     <div
       v-if="uiStore.dragActive"
       class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim)] px-4"
@@ -20,8 +20,11 @@
 
     <AppHeader @open-role-selector="uiStore.setSidebarOpen(true)" @open-data-modal="uiStore.setDataModalOpen(true)" />
 
-    <main class="mx-auto w-full max-w-[1600px] flex-1 px-4 pb-24 pt-4 lg:px-6 lg:pb-6">
-      <section class="min-w-0 transition-[padding-right] duration-150" :class="{ 'lg:pr-[27rem]': explorerStore.detail.open }">
+    <main
+      class="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 px-4 pb-24 pt-4 lg:overflow-hidden lg:px-6 lg:pb-6"
+      :class="explorerStore.detail.open ? 'lg:gap-6' : 'lg:gap-0'"
+    >
+      <section class="flex min-h-0 min-w-0 flex-1 flex-col">
         <div v-if="datasetStore.isPreloading" class="workspace-surface">
           <div class="empty-results">
             <div
@@ -41,7 +44,7 @@
     </main>
 
     <footer class="border-t border-[var(--border-default)] bg-[var(--surface-overlay)]">
-      <div class="mx-auto flex max-w-[1600px] flex-col gap-2 px-4 py-4 text-sm text-[var(--text-secondary)] sm:flex-row sm:items-center sm:justify-between lg:px-6">
+      <div class="app-footer-inner mx-auto flex max-w-[1600px] flex-col gap-1 px-4 py-2 text-xs text-[var(--text-secondary)] sm:flex-row sm:items-center sm:justify-between lg:px-6">
         <div class="flex flex-wrap items-center gap-2">
           <div>
             Built by
@@ -57,7 +60,7 @@
           <div aria-hidden="true">|</div>
           <div>© {{ copyrightYearLabel }}</div>
         </div>
-        <div v-if="APP_VERSION" class="font-medium text-[var(--text-primary)] sm:text-right">Version {{ APP_VERSION }}</div>
+        <div v-if="APP_VERSION" class="font-medium text-[var(--text-primary)] sm:text-right">v{{ APP_VERSION }}</div>
       </div>
     </footer>
 

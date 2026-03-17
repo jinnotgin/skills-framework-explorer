@@ -75,7 +75,7 @@ select {
   }
 
   .workspace-surface {
-    @apply min-h-[60vh];
+    @apply flex flex-1 flex-col lg:min-h-0 lg:overflow-y-auto;
   }
 
   .page-panel {
@@ -139,11 +139,11 @@ select {
   }
 
   .detail-shell {
-    @apply fixed inset-y-0 right-0 z-40 flex w-[min(100vw,25rem)] translate-x-full flex-col border-l border-[var(--border-default)] bg-[var(--surface-default)] transition-transform lg:top-[4.5rem] lg:right-6 lg:h-[calc(100vh-6rem)] lg:rounded-[10px] lg:border lg:shadow-[var(--shadow-subtle)];
+    @apply fixed inset-y-0 right-0 z-40 flex w-[min(100vw,25rem)] translate-x-full flex-col border-l border-[var(--border-default)] bg-[var(--surface-default)] transition-transform lg:relative lg:inset-auto lg:z-auto lg:h-full lg:w-0 lg:shrink-0 lg:translate-x-4 lg:overflow-hidden lg:rounded-[10px] lg:border lg:border-transparent lg:opacity-0 lg:shadow-none lg:pointer-events-none lg:transition-[width,opacity,transform,border-color,box-shadow];
   }
 
   .detail-shell.open {
-    @apply translate-x-0;
+    @apply translate-x-0 lg:w-[25rem] lg:translate-x-0 lg:border-[var(--border-default)] lg:opacity-100 lg:shadow-[var(--shadow-subtle)] lg:pointer-events-auto;
   }
 
   .detail-section {
