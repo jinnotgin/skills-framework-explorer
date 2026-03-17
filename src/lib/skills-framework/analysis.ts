@@ -11,6 +11,9 @@ import type {
   UniqueSkillAnalysis,
 } from './types';
 
+const analysisCache = new WeakMap<NormalizedDataset, Map<string, AnalysisResults | null>>();
+const skillsIndexCache = new WeakMap<NormalizedDataset, Map<string, AnalysisResults | null>>();
+
 function ensureProficiencyRecord(target: Record<string, ProficiencyDetail>, level: string, proficiencyDescription: string): ProficiencyDetail {
   if (!target[level]) {
     target[level] = {
@@ -43,9 +46,25 @@ function pushUniqueTsc(target: SkillTsc[], value: SkillTsc): void {
   }
 }
 
+function makeCacheKey(roleKeys: RoleKey[]): string {
+  return roleKeys.join('\u001f');
+}
+
 export function buildAnalysis(dataset: NormalizedDataset | null, roleKeys: RoleKey[]): AnalysisResults | null {
   if (!dataset || roleKeys.length === 0) {
     return null;
+  }
+
+  const cacheKey = makeCacheKey(roleKeys);
+  let datasetCache = analysisCache.get(dataset);
+  if (!datasetCache) {
+    datasetCache = new Map();
+    analysisCache.set(dataset, datasetCache);
+  }
+
+  const cached = datasetCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
   }
 
   const selectedKeySet = new Set(roleKeys);
@@ -184,7 +203,7 @@ export function buildAnalysis(dataset: NormalizedDataset | null, roleKeys: RoleK
     globalSkills[title].proficiencyLevels = sortLevels(Object.keys(globalSkills[title].proficiencies));
   }
 
-  return {
+  const result = {
     roles: roleResults,
     roleKeys: roleKeys.filter((key) => key in roleResults),
     uniqueSkills: globalSkills,
@@ -193,6 +212,9 @@ export function buildAnalysis(dataset: NormalizedDataset | null, roleKeys: RoleK
     totalUniqueSkills: uniqueSkillTitles.length,
     totalTscs,
   };
+
+  datasetCache.set(cacheKey, result);
+  return result;
 }
 
 export function buildSkillsIndex(dataset: NormalizedDataset | null, roleKeys?: RoleKey[]): AnalysisResults | null {
@@ -203,6 +225,18 @@ export function buildSkillsIndex(dataset: NormalizedDataset | null, roleKeys?: R
   const effectiveRoleKeys = roleKeys?.length ? roleKeys : dataset.roles.map((role) => role.key);
   if (!effectiveRoleKeys.length) {
     return null;
+  }
+
+  const cacheKey = makeCacheKey(effectiveRoleKeys);
+  let datasetCache = skillsIndexCache.get(dataset);
+  if (!datasetCache) {
+    datasetCache = new Map();
+    skillsIndexCache.set(dataset, datasetCache);
+  }
+
+  const cached = datasetCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
   }
 
   const selectedKeySet = new Set(effectiveRoleKeys);
@@ -293,7 +327,7 @@ export function buildSkillsIndex(dataset: NormalizedDataset | null, roleKeys?: R
     globalSkills[title].proficiencyLevels = sortLevels(Object.keys(globalSkills[title].proficiencies));
   }
 
-  return {
+  const result = {
     roles: {},
     roleKeys: effectiveRoleKeys,
     uniqueSkills: globalSkills,
@@ -302,6 +336,9 @@ export function buildSkillsIndex(dataset: NormalizedDataset | null, roleKeys?: R
     totalUniqueSkills: uniqueSkillTitles.length,
     totalTscs,
   };
+
+  datasetCache.set(cacheKey, result);
+  return result;
 }
 
 export function buildCompareRows(results: AnalysisResults | null, role1Key: RoleKey | null, role2Key: RoleKey | null): CompareSkillRow[] {
