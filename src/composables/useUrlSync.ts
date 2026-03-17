@@ -24,6 +24,15 @@ export function useUrlSync() {
 
   const routeName = computed(() => route.name?.toString() ?? 'roles');
 
+  function isSameSkillCentricDetail(skillKey: string, focusedRoleKey: string | null) {
+    return (
+      explorerStore.detail.open &&
+      explorerStore.detail.kind === 'skill-centric' &&
+      explorerStore.detail.skillKey === skillKey &&
+      explorerStore.detail.focusedRoleKey === focusedRoleKey
+    );
+  }
+
   const applyQueryToStore = async () => {
     if (!datasetStore.hasDataset) {
       return;
@@ -90,9 +99,13 @@ export function useUrlSync() {
               .filter((skill) => skill.title === route.query.skill);
       const focusedRoleKey = typeof route.query.role === 'string' ? route.query.role : null;
       const resolvedSkill = directMatch ?? (titleMatches.length === 1 ? titleMatches[0] : null);
-      if (resolvedSkill) {
+      if (resolvedSkill && !isSameSkillCentricDetail(resolvedSkill.skillKey, focusedRoleKey)) {
         explorerStore.openSkillCentricDetail(resolvedSkill.skillKey, resolvedSkill.title, focusedRoleKey);
+      } else if (!resolvedSkill && explorerStore.detail.kind === 'skill-centric') {
+        explorerStore.closeDetail();
       }
+    } else if (routeName.value === 'skills' && explorerStore.detail.kind === 'skill-centric') {
+      explorerStore.closeDetail();
     }
   };
 
@@ -112,60 +125,65 @@ export function useUrlSync() {
   );
 
   watch(
-    () => ({
-      name: routeName.value,
-      roles: explorerStore.analysisResults?.roleKeys ?? [],
-      roleSearchQuery: explorerStore.roleSearchQuery,
-      sectorFilter: explorerStore.sectorFilter,
-      skillSearchQuery: explorerStore.skillSearchQuery,
-      activeRoleKey: explorerStore.activeRoleKey,
-      compareSelection: explorerStore.compareSelection,
-      compareFilter: explorerStore.compareFilter,
-      compareShowDescriptions: explorerStore.compareShowDescriptions,
-      detail: explorerStore.detail,
-    }),
-    (state) => {
+    () => [
+      routeName.value,
+      ...(explorerStore.analysisResults?.roleKeys ?? []),
+      explorerStore.roleSearchQuery,
+      explorerStore.sectorFilter,
+      explorerStore.skillSearchQuery,
+      explorerStore.activeRoleKey,
+      explorerStore.compareSelection.role1,
+      explorerStore.compareSelection.role2,
+      explorerStore.compareFilter,
+      explorerStore.compareShowDescriptions ? '1' : '0',
+      explorerStore.detail.open ? '1' : '0',
+      explorerStore.detail.kind,
+      explorerStore.detail.skillKey,
+      explorerStore.detail.focusedRoleKey,
+    ],
+    () => {
       const query: Record<string, string | string[]> = {};
+      const analyzedRoleKeys = explorerStore.analysisResults?.roleKeys ?? [];
 
-      if (state.roles.length) {
-        query.roles = state.roles;
+      if (analyzedRoleKeys.length) {
+        query.roles = analyzedRoleKeys;
       }
 
-      if (state.name === 'roles') {
-        if (state.roleSearchQuery) {
-          query.q = state.roleSearchQuery;
+      if (routeName.value === 'roles') {
+        if (explorerStore.roleSearchQuery) {
+          query.q = explorerStore.roleSearchQuery;
         }
-        if (state.sectorFilter) {
-          query.sector = state.sectorFilter;
+        if (explorerStore.sectorFilter) {
+          query.sector = explorerStore.sectorFilter;
         }
-        if (state.activeRoleKey) {
-          query.role = state.activeRoleKey;
+        if (explorerStore.activeRoleKey) {
+          query.role = explorerStore.activeRoleKey;
         }
       }
 
-      if (state.name === 'compare') {
-        if (state.compareSelection.role1) {
-          query.role1 = state.compareSelection.role1;
+      if (routeName.value === 'compare') {
+        if (explorerStore.compareSelection.role1) {
+          query.role1 = explorerStore.compareSelection.role1;
         }
-        if (state.compareSelection.role2) {
-          query.role2 = state.compareSelection.role2;
+        if (explorerStore.compareSelection.role2) {
+          query.role2 = explorerStore.compareSelection.role2;
         }
-        if (state.compareFilter !== 'all') {
-          query.filter = state.compareFilter;
+        if (explorerStore.compareFilter !== 'all') {
+          query.filter = explorerStore.compareFilter;
         }
-        if (state.compareShowDescriptions) {
+        if (explorerStore.compareShowDescriptions) {
           query.details = '1';
         }
       }
 
-      if (state.name === 'skills') {
-        if (state.skillSearchQuery) {
-          query.q = state.skillSearchQuery;
+      if (routeName.value === 'skills') {
+        if (explorerStore.skillSearchQuery) {
+          query.q = explorerStore.skillSearchQuery;
         }
-        if (state.detail.kind === 'skill-centric' && state.detail.skillKey) {
-          query.skill = state.detail.skillKey;
-          if (state.detail.focusedRoleKey) {
-            query.role = state.detail.focusedRoleKey;
+        if (explorerStore.detail.open && explorerStore.detail.kind === 'skill-centric' && explorerStore.detail.skillKey) {
+          query.skill = explorerStore.detail.skillKey;
+          if (explorerStore.detail.focusedRoleKey) {
+            query.role = explorerStore.detail.focusedRoleKey;
           }
         }
       }
@@ -173,9 +191,8 @@ export function useUrlSync() {
       const currentQuery = JSON.stringify(route.query);
       const nextQuery = JSON.stringify(query);
       if (currentQuery !== nextQuery) {
-        router.replace({ name: state.name, query });
+        router.replace({ name: routeName.value, query });
       }
     },
-    { deep: true },
   );
 }
