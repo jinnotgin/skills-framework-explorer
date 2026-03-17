@@ -47,8 +47,9 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from 'vue';
+import { onBeforeUnmount, onMounted, watch } from 'vue';
 import { RouterView } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import AppBottomNav from './components/layout/AppBottomNav.vue';
 import DataModal from './components/layout/DataModal.vue';
@@ -65,10 +66,20 @@ import { useUiStore } from './stores/ui';
 const datasetStore = useDatasetStore();
 const explorerStore = useExplorerStore();
 const uiStore = useUiStore();
+const route = useRoute();
 
 useResponsiveLayout();
 useDatasetLoader();
 useUrlSync();
+
+watch(
+  () => route.name,
+  (nextRoute, previousRoute) => {
+    if (previousRoute && nextRoute !== previousRoute && explorerStore.detail.open) {
+      explorerStore.closeDetail();
+    }
+  },
+);
 
 let dragCounter = 0;
 

@@ -101,8 +101,14 @@
                 class="flex items-center justify-between gap-3 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-2 text-sm"
               >
                 <span class="min-w-0 truncate text-[var(--text-secondary)]">{{ role.role }}</span>
-                <button class="text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]" type="button" @click="toggleRole(role.key)">
-                  Remove
+                <button
+                  class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-default)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-soft)]"
+                  type="button"
+                  :aria-label="`Remove ${role.role}`"
+                  :title="`Remove ${role.role}`"
+                  @click="toggleRole(role.key)"
+                >
+                  <X class="h-3.5 w-3.5" />
                 </button>
               </li>
             </ul>
