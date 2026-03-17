@@ -73,7 +73,7 @@
 
       <UiVirtualTable
         v-else-if="filteredSkills.length"
-        class="max-h-[min(70vh,48rem)]"
+        class="max-h-[min(78vh,56rem)]"
         table-class="compare-table skills-table"
         :items="filteredSkills"
         :item-height="92"
