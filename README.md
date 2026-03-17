@@ -55,6 +55,8 @@ The app supports two client-side data paths:
 - Use `APP_BASE_PATH` to set the deployed base path for both routing/assets and preloaded dataset fetching.
 - Example for GitHub Pages project sites: `APP_BASE_PATH=skills-framework-explorer`.
 - Leave it unset for root deployment (`/`).
+- Use `APP_ROUTER_MODE=hash` on static hosts without SPA rewrite support, such as GitHub Pages project sites.
+- Leave `APP_ROUTER_MODE` unset to use standard history routing.
 
 ## Notes
 
