@@ -48,6 +48,12 @@ interface FallbackCache {
   skillIndexByKey: Map<string, SkillIndexRecord>;
 }
 
+interface RoleSortFields {
+  role: string;
+  sector: string;
+  track: string;
+}
+
 class PreloadedDatasetDatabase extends Dexie {
   meta!: Table<DatasetMetaRecord, string>;
   roles!: Table<RoleCatalogRecord, string>;
@@ -73,11 +79,8 @@ class PreloadedDatasetDatabase extends Dexie {
   }
 }
 
-function sortRoleSummaries<T extends { role: string; sector: string; track: string }>(roles: T[]): T[] {
-  return [...roles].sort(
-    (left, right) =>
-      left.sector.localeCompare(right.sector) || left.role.localeCompare(right.role) || left.track.localeCompare(right.track),
-  );
+function compareRoles(left: RoleSortFields, right: RoleSortFields): number {
+  return left.sector.localeCompare(right.sector) || left.role.localeCompare(right.role) || left.track.localeCompare(right.track);
 }
 
 function toRoleSummary(record: RoleCatalogRecord): RoleSummary {
@@ -112,7 +115,7 @@ function buildPreloadedReadModels(dataset: NormalizedDataset): PreloadedReadMode
     throw new Error('Failed to build preloaded analysis models');
   }
 
-  const roles = sortRoleSummaries(dataset.roles).map(createRoleCatalogRecord);
+  const roles = [...dataset.roles].sort(compareRoles).map(createRoleCatalogRecord);
   const roleCwf = roles.map((role) => ({
     roleKey: role.roleKey,
     cwf: dataset.roleCwfByKey[role.roleKey] ?? [],
@@ -303,12 +306,12 @@ export class PreloadedDatasetRepository {
 
   async getRolesCatalog(): Promise<RoleSummary[]> {
     if (this.source === 'fallback-memory') {
-      return this.fallbackCache?.roles.map(toRoleSummary) ?? [];
+      return [...(this.fallbackCache?.roles ?? [])].sort(compareRoles).map(toRoleSummary);
     }
 
     const db = await this.openDatabase();
     const roles = await db.roles.toArray();
-    return sortRoleSummaries(roles).map(toRoleSummary);
+    return [...roles].sort(compareRoles).map(toRoleSummary);
   }
 
   async getRoleAnalyses(roleKeys: RoleKey[]): Promise<RoleAnalysisRecord[]> {
@@ -323,7 +326,7 @@ export class PreloadedDatasetRepository {
     }
 
     const db = await this.openDatabase();
-    const roles = await db.roleAnalysis.bulkGet(roleKeys);
+    const roles: Array<RoleAnalysisRecord | undefined> = await db.roleAnalysis.bulkGet(roleKeys);
     return roles.filter((role): role is RoleAnalysisRecord => Boolean(role));
   }
 

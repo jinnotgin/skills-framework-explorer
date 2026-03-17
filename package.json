@@ -1,6 +1,7 @@
 {
   "name": "skills-framework-explorer",
   "version": "1.0.0",
+  "appVersion": "v11",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "dexie": "^4.3.0",
     "jszip": "^3.10.1",
     "lucide-vue-next": "^0.511.0",
     "pinia": "^3.0.1",
