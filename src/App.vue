@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)]">
     <div
       v-if="uiStore.dragActive"
-      class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-[rgba(47,36,25,0.24)] px-4"
+      class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim)] px-4"
     >
       <div class="w-full max-w-md rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)] px-6 py-6 text-center shadow-[var(--shadow-subtle)]">
         <div class="text-base font-semibold text-[var(--text-primary)]">Drop files to update the dataset</div>
@@ -14,7 +14,7 @@
 
     <div
       v-if="uiStore.isMobile && uiStore.sidebarOpen"
-      class="fixed inset-0 z-30 bg-[rgba(47,36,25,0.24)] lg:hidden"
+      class="fixed inset-0 z-30 bg-[var(--overlay-scrim)] lg:hidden"
       @click="uiStore.setSidebarOpen(false)"
     ></div>
 

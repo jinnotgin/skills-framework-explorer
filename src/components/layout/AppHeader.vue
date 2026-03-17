@@ -1,5 +1,5 @@
 <template>
-  <header class="sticky top-0 z-40 border-b border-[var(--border-default)] bg-[var(--surface-default)]">
+  <header class="sticky top-0 z-40 border-b border-[var(--border-default)] bg-[var(--surface-overlay)] backdrop-blur-md">
     <div class="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-4 px-4 lg:px-6">
       <div class="flex min-w-0 flex-1 items-center gap-3 lg:basis-[24rem]">
         <button
@@ -21,7 +21,7 @@
           :key="view.to"
           :to="view.to"
           class="rounded-[8px] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-          :class="{ 'bg-[var(--surface-muted)] text-[var(--text-primary)]': route.path === view.to }"
+          :class="{ 'bg-[var(--primary-soft)] text-[var(--primary-strong)]': route.path === view.to }"
         >
           {{ view.label }}
         </RouterLink>
@@ -29,7 +29,7 @@
 
       <div class="hidden items-center justify-end gap-2 sm:flex sm:flex-1 lg:basis-[24rem]">
         <button
-          class="hidden rounded-[8px] border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] sm:inline-flex"
+          class="hidden rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] sm:inline-flex"
           type="button"
           @click="$emit('openRoleSelector')"
         >
@@ -37,7 +37,7 @@
         </button>
 
         <button
-          class="hidden items-center gap-2 rounded-[8px] border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] sm:inline-flex"
+          class="hidden items-center gap-2 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] sm:inline-flex"
           type="button"
           @click="$emit('openDataModal')"
         >

@@ -5,27 +5,29 @@
 @tailwind utilities;
 
 :root {
-  --bg-app: #faf8f5;
-  --bg-subtle: #f3ede5;
-  --bg-muted: #ece3d7;
-  --surface-default: #fffdf9;
-  --surface-muted: #f6f0e8;
-  --surface-strong: #ebe0d2;
-  --border-default: #d8cbbb;
-  --border-strong: #c6b59f;
-  --text-primary: #2f2419;
-  --text-secondary: #5f5142;
-  --text-muted: #857563;
-  --primary: #8b4c1c;
-  --primary-strong: #6f3c14;
-  --primary-soft: #efe1d4;
-  --success: #2f6b5b;
-  --success-soft: #dbe7e1;
-  --warning: #996515;
-  --warning-soft: #f0e4c9;
-  --danger: #a33c30;
-  --danger-soft: #f3ddd8;
-  --shadow-subtle: 0 2px 8px rgba(47, 36, 25, 0.08);
+  --bg-app: #f7faff;
+  --bg-subtle: #eef3fb;
+  --bg-muted: #e8f0fe;
+  --surface-default: #ffffff;
+  --surface-muted: #f7faff;
+  --surface-strong: #e8f0fe;
+  --surface-overlay: rgba(255, 255, 255, 0.86);
+  --border-default: #d7e2f0;
+  --border-strong: #bfd1e8;
+  --text-primary: #202124;
+  --text-secondary: #5f6368;
+  --text-muted: #80868b;
+  --primary: #1a73e8;
+  --primary-strong: #185abc;
+  --primary-soft: #e8f0fe;
+  --success: #188038;
+  --success-soft: #e6f4ea;
+  --warning: #b06000;
+  --warning-soft: #fef7e0;
+  --danger: #d93025;
+  --danger-soft: #fce8e6;
+  --overlay-scrim: rgba(26, 115, 232, 0.16);
+  --shadow-subtle: 0 10px 30px rgba(60, 64, 67, 0.08), 0 1px 3px rgba(60, 64, 67, 0.12);
 }
 
 html,
@@ -37,7 +39,18 @@ body,
 body {
   margin: 0;
   font-family: 'IBM Plex Sans', sans-serif;
-  background: var(--bg-app);
+  background:
+    radial-gradient(circle at top left, rgba(26, 115, 232, 0.1), transparent 24rem),
+    radial-gradient(circle at top right, rgba(103, 80, 164, 0.08), transparent 20rem),
+    linear-gradient(180deg, #ffffff 0%, var(--bg-app) 52%, #f3f7ff 100%);
+  color: var(--text-primary);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(26, 115, 232, 0.18);
   color: var(--text-primary);
 }
 
@@ -58,7 +71,7 @@ select {
   }
 
   .sidebar-panel {
-    @apply rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)];
+    @apply rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)] shadow-[var(--shadow-subtle)];
   }
 
   .workspace-surface {
@@ -66,7 +79,7 @@ select {
   }
 
   .page-panel {
-    @apply rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)];
+    @apply rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)] shadow-[var(--shadow-subtle)];
   }
 
   .bottom-nav-btn {
@@ -118,7 +131,7 @@ select {
   }
 
   .list-row:hover {
-    @apply bg-[var(--surface-muted)];
+    @apply border-[var(--border-strong)] bg-[var(--surface-muted)];
   }
 
   .list-row.active {
@@ -146,7 +159,7 @@ select {
   }
 
   .detail-card {
-    @apply mb-3 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] px-4 py-4;
+    @apply mb-3 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] px-4 py-4 shadow-[var(--shadow-subtle)];
   }
 
   .detail-card-header {
@@ -198,7 +211,7 @@ select {
   }
 
   .table-shell {
-    @apply overflow-hidden rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)];
+    @apply overflow-hidden rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)] shadow-[var(--shadow-subtle)];
   }
 
   .dense-table {

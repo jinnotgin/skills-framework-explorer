@@ -1,5 +1,5 @@
 <template>
-  <div v-if="uiStore.sidebarOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(47,36,25,0.3)] px-4 py-6" @click.self="uiStore.setSidebarOpen(false)">
+  <div v-if="uiStore.sidebarOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim)] px-4 py-6" @click.self="uiStore.setSidebarOpen(false)">
     <div class="flex h-[min(80vh,52rem)] w-full max-w-5xl flex-col rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-default)] shadow-[var(--shadow-subtle)]">
       <div class="flex items-start justify-between gap-4 border-b border-[var(--border-default)] px-5 py-4">
         <div>

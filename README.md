@@ -43,7 +43,7 @@ npm test
 
 The app supports two client-side data paths:
 
-- Preloaded zip asset at [`/Users/ufinity/Documents/GitHub/skills-framework-explorer/public/data/skills-framework-data.json.zip`](/Users/ufinity/Documents/GitHub/skills-framework-explorer/public/data/skills-framework-data.json.zip)
+- Preloaded zip asset at `data/skills-framework-data.json.zip`
 - Manual upload of the official SkillsFuture XLSX workbooks:
   - Skills Framework Dataset workbook with `Job Role_Description`, `Job Role_TCS_CCS`, `TSC_CCS_K&A`
   - TSC to Unique Skill Mapping workbook with `TSC to Unique Skill Mapping`
@@ -58,5 +58,5 @@ The app supports two client-side data paths:
 
 ## Notes
 
-- Firebase Hosting now serves the Vite build output from `dist/`.
-- The previous single-file implementation is preserved at [`/Users/ufinity/Documents/GitHub/skills-framework-explorer/legacy/index-legacy.html`](/Users/ufinity/Documents/GitHub/skills-framework-explorer/legacy/index-legacy.html) as a migration reference.
+- Github Pages now serves the Vite build output from `dist/`.
+- The previous single-file implementation is preserved at `legacy/index-legacy.html` as a migration reference.
