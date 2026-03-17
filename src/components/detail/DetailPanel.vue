@@ -183,26 +183,6 @@
           </section>
 
           <section class="detail-section">
-            <button class="flex w-full items-center justify-between gap-3 text-left" type="button" @click="toggleSection('roles')">
-              <h3>Required by roles</h3>
-              <ChevronDown class="h-4 w-4 text-[var(--text-muted)] transition" :class="{ 'rotate-180': sectionOpen.roles }" />
-            </button>
-            <div v-show="sectionOpen.roles" class="mt-3 grid gap-2">
-              <div
-                v-for="role in skillCentricDetail.roles"
-                :key="role.key"
-                class="flex items-center justify-between gap-4 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-4 py-3"
-              >
-                <div>
-                  <div class="text-sm font-semibold text-[var(--text-primary)]">{{ role.name }}</div>
-                  <div class="text-xs text-[var(--text-muted)]">{{ role.sector }} · {{ role.track }}</div>
-                </div>
-                <span class="level-badge">{{ role.proficiency }}</span>
-              </div>
-            </div>
-          </section>
-
-          <section class="detail-section">
             <button class="flex w-full items-center justify-between gap-3 text-left" type="button" @click="toggleSection('levels')">
               <h3>Proficiency levels</h3>
               <ChevronDown class="h-4 w-4 text-[var(--text-muted)] transition" :class="{ 'rotate-180': sectionOpen.levels }" />
@@ -258,6 +238,26 @@
                   </div>
                 </div>
               </article>
+            </div>
+          </section>
+
+          <section class="detail-section">
+            <button class="flex w-full items-center justify-between gap-3 text-left" type="button" @click="toggleSection('roles')">
+              <h3>Required by roles</h3>
+              <ChevronDown class="h-4 w-4 text-[var(--text-muted)] transition" :class="{ 'rotate-180': sectionOpen.roles }" />
+            </button>
+            <div v-show="sectionOpen.roles" class="mt-3 grid gap-2">
+              <div
+                v-for="role in skillCentricDetail.roles"
+                :key="role.key"
+                class="flex items-center justify-between gap-4 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-4 py-3"
+              >
+                <div>
+                  <div class="text-sm font-semibold text-[var(--text-primary)]">{{ role.name }}</div>
+                  <div class="text-xs text-[var(--text-muted)]">{{ role.sector }} · {{ role.track }}</div>
+                </div>
+                <span class="level-badge">{{ role.proficiency }}</span>
+              </div>
             </div>
           </section>
         </template>
