@@ -100,7 +100,7 @@
       </div>
     </section>
 
-    <section class="table-shell">
+    <section class="table-shell overflow-visible">
       <div class="border-b border-[var(--border-default)] px-4 py-3">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -114,7 +114,7 @@
 
       <UiVirtualTable
         v-if="filteredSkills.length"
-        class="max-h-[min(60vh,42rem)]"
+        :contained="false"
         table-class="dense-table"
         :items="filteredSkills"
         :item-height="84"

@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" class="overflow-auto" @scroll="onScroll">
+  <div ref="container" :class="containerClass" @scroll="onScroll">
     <table :class="tableClass">
       <slot name="colgroup"></slot>
 
@@ -39,11 +39,13 @@ const props = withDefaults(
     columnCount: number;
     tableClass?: string;
     overscan?: number;
+    contained?: boolean;
     itemKey?: string | ((item: any, index: number) => string | number);
   }>(),
   {
     tableClass: '',
     overscan: 6,
+    contained: true,
     itemKey: undefined,
   },
 );
@@ -53,6 +55,8 @@ const scrollTop = ref(0);
 const viewportHeight = ref(0);
 let resizeObserver: ResizeObserver | null = null;
 let frameId = 0;
+
+const containerClass = computed(() => (props.contained ? 'overflow-auto' : 'overflow-visible'));
 
 const visibleCount = computed(() => {
   if (viewportHeight.value <= 0) {
@@ -128,6 +132,11 @@ function onScroll(event: Event) {
 }
 
 function syncViewport() {
+  if (!props.contained) {
+    viewportHeight.value = 0;
+    return;
+  }
+
   viewportHeight.value = container.value?.clientHeight ?? 0;
 }
 

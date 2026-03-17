@@ -67,7 +67,7 @@
       </div>
     </section>
 
-    <section class="table-shell">
+    <section class="table-shell overflow-visible">
       <table class="compare-table">
         <thead>
           <tr>

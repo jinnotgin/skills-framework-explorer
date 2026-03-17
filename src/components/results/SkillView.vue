@@ -29,16 +29,15 @@
           <div class="w-full lg:min-w-[18rem]">
             <UiInput v-model="skillInput" placeholder="Search skills" />
           </div>
-          <UiButton
+          <UiCopyButton
             v-if="!uiStore.isMobile"
             size="sm"
             variant="secondary"
             :disabled="!filteredSkills.length"
-            :title="copyButtonLabel"
-            @click="copySkills"
-          >
-            <Clipboard class="h-4 w-4" />
-          </UiButton>
+            :text="copyPayload"
+            tooltip="Copy JSON"
+            success-tooltip="Copied JSON"
+          />
         </div>
       </div>
     </section>
@@ -133,9 +132,9 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { Clipboard } from 'lucide-vue-next';
 
 import UiButton from '../ui/UiButton.vue';
+import UiCopyButton from '../ui/UiCopyButton.vue';
 import UiInput from '../ui/UiInput.vue';
 import UiVirtualTable from '../ui/UiVirtualTable.vue';
 import { useDatasetStore } from '../../stores/dataset';
@@ -146,7 +145,6 @@ const datasetStore = useDatasetStore();
 const explorerStore = useExplorerStore();
 const uiStore = useUiStore();
 
-const copyState = ref<'idle' | 'done' | 'error'>('idle');
 const skillInput = ref(explorerStore.skillSearchQuery);
 const debouncedSkillQuery = ref(explorerStore.skillSearchQuery);
 let debounceTimer: number | undefined;
@@ -164,14 +162,22 @@ const filteredSkills = computed(() => {
   return allSkills.value.filter((skill) => !query || skill.title.toLowerCase().includes(query));
 });
 
-const copyButtonLabel = computed(() => {
-  if (copyState.value === 'done') {
-    return 'Copied';
+const copyPayload = computed(() => {
+  if (!results.value || !filteredSkills.value.length) {
+    return '';
   }
-  if (copyState.value === 'error') {
-    return 'Copy failed';
-  }
-  return 'Copy shown skills';
+
+  return JSON.stringify(
+    {
+      copiedAt: new Date().toISOString(),
+      query: explorerStore.skillSearchQuery,
+      analysedRoleKeys: results.value.roleKeys,
+      skillCount: filteredSkills.value.length,
+      skills: filteredSkills.value,
+    },
+    null,
+    2,
+  );
 });
 
 watch(
@@ -209,52 +215,4 @@ watch(
 onBeforeUnmount(() => {
   window.clearTimeout(debounceTimer);
 });
-
-async function copySkills() {
-  if (!results.value || !filteredSkills.value.length) {
-    return;
-  }
-
-  const payload = {
-    copiedAt: new Date().toISOString(),
-    query: explorerStore.skillSearchQuery,
-    analysedRoleKeys: results.value.roleKeys,
-    skillCount: filteredSkills.value.length,
-    skills: filteredSkills.value,
-  };
-
-  const text = JSON.stringify(payload, null, 2);
-
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      fallbackCopy(text);
-    }
-    copyState.value = 'done';
-  } catch {
-    try {
-      fallbackCopy(text);
-      copyState.value = 'done';
-    } catch {
-      copyState.value = 'error';
-    }
-  }
-
-  window.setTimeout(() => {
-    copyState.value = 'idle';
-  }, 2000);
-}
-
-function fallbackCopy(text: string) {
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.setAttribute('readonly', '');
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand('copy');
-  document.body.removeChild(textarea);
-}
 </script>

@@ -264,7 +264,6 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { ChevronRight, Files, X } from 'lucide-vue-next';
-import { useRouter } from 'vue-router';
 
 import UiButton from '../ui/UiButton.vue';
 import UiInput from '../ui/UiInput.vue';
@@ -276,7 +275,6 @@ import { useUiStore } from '../../stores/ui';
 const datasetStore = useDatasetStore();
 const explorerStore = useExplorerStore();
 const uiStore = useUiStore();
-const router = useRouter();
 
 const expandedSectors = reactive(new Set<string>());
 const searchInput = ref<InstanceType<typeof UiInput> | null>(null);
@@ -452,6 +450,5 @@ async function analyze() {
   explorerStore.setSelection(draftSelectedRoleKeys.value);
   await explorerStore.runAnalysis(datasetStore.dataset, draftSelectedRoleKeys.value);
   uiStore.setSidebarOpen(false);
-  router.push('/roles');
 }
 </script>
