@@ -7,12 +7,14 @@ import type {
   DatasetRawData,
   KAndAEntry,
   NormalizedDataset,
+  PreloadedDatasetMetadata,
   RawRow,
   RoleSummary,
   WorkbookKind,
 } from './types';
 
 const EMPTY_DATA: DatasetRawData = {
+  generatedAt: '',
   jobRoleDescriptions: [],
   jobRoleTcsCcs: [],
   tscKAndA: [],
@@ -71,12 +73,32 @@ export async function loadPreloadedDataset(url = 'data/skills-framework-data.jso
   const parsed = JSON.parse(jsonContent) as Partial<DatasetRawData>;
 
   return {
+    generatedAt: typeof parsed.generatedAt === 'string' ? parsed.generatedAt : '',
     jobRoleDescriptions: parsed.jobRoleDescriptions ?? [],
     jobRoleTcsCcs: parsed.jobRoleTcsCcs ?? [],
     tscKAndA: parsed.tscKAndA ?? [],
     tscToUnique: parsed.tscToUnique ?? [],
     uniqueSkillsList: parsed.uniqueSkillsList ?? [],
     jobRoleCwfKt: parsed.jobRoleCwfKt ?? [],
+  };
+}
+
+export async function loadPreloadedDatasetMetadata(
+  url = 'data/skills-framework-data.meta.json',
+): Promise<PreloadedDatasetMetadata | null> {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const parsed = (await response.json()) as Partial<PreloadedDatasetMetadata>;
+  if (typeof parsed.generatedAt !== 'string' || !parsed.generatedAt) {
+    return null;
+  }
+
+  return {
+    generatedAt: parsed.generatedAt,
   };
 }
 

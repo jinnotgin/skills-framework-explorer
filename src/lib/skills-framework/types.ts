@@ -5,7 +5,12 @@ export type ImportMode = 'none' | 'preloaded' | 'upload';
 export type CompareFilter = 'all' | 'shared' | 'diff' | 'role1' | 'role2';
 export type DetailKind = 'role-skill' | 'compare-skill' | 'skill-centric';
 
+export interface PreloadedDatasetMetadata {
+  generatedAt: string;
+}
+
 export interface DatasetRawData {
+  generatedAt?: string;
   jobRoleDescriptions: RawRow[];
   jobRoleTcsCcs: RawRow[];
   tscKAndA: RawRow[];
