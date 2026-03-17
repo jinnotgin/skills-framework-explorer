@@ -100,7 +100,7 @@ describe('explorer store', () => {
     setActivePinia(createPinia());
   });
 
-  it('keeps compare selections distinct after analysis', () => {
+  it('keeps compare selections distinct after analysis', async () => {
     const explorerStore = useExplorerStore();
     const dataset = createNormalizedDataset(fixture);
 
@@ -108,7 +108,7 @@ describe('explorer store', () => {
       'Technology|||Engineering|||Frontend Engineer',
       'Technology|||Engineering|||Staff Frontend Engineer',
     ]);
-    explorerStore.runAnalysis(dataset);
+    await explorerStore.runAnalysis(dataset);
 
     expect(explorerStore.compareSelection.role1).toBe('Technology|||Engineering|||Frontend Engineer');
     expect(explorerStore.compareSelection.role2).toBe('Technology|||Engineering|||Staff Frontend Engineer');

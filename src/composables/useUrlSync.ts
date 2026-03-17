@@ -24,15 +24,15 @@ export function useUrlSync() {
 
   const routeName = computed(() => route.name?.toString() ?? 'roles');
 
-  const applyQueryToStore = () => {
-    if (!datasetStore.dataset) {
+  const applyQueryToStore = async () => {
+    if (!datasetStore.hasDataset) {
       return;
     }
 
-    const roleKeys = readStringArray(route.query.roles).filter((key) => Boolean(datasetStore.dataset?.roleByKey[key]));
+    const roleKeys = readStringArray(route.query.roles).filter((key) => Boolean(datasetStore.roleByKey[key]));
     if (roleKeys.length && JSON.stringify(roleKeys) !== JSON.stringify(explorerStore.analyzedRoleKeys)) {
       explorerStore.setSelection(roleKeys);
-      explorerStore.runAnalysis(datasetStore.dataset, roleKeys);
+      await explorerStore.runAnalysis(datasetStore.dataset, roleKeys);
     }
 
     if (typeof route.query.q === 'string') {
@@ -50,7 +50,7 @@ export function useUrlSync() {
 
     if (routeName.value === 'roles') {
       const activeRole = typeof route.query.role === 'string' ? route.query.role : null;
-      if (activeRole && datasetStore.dataset?.roleByKey[activeRole]) {
+      if (activeRole && datasetStore.roleByKey[activeRole]) {
         explorerStore.setActiveRole(activeRole);
       } else {
         explorerStore.ensureActiveRole();
@@ -81,9 +81,9 @@ export function useUrlSync() {
   };
 
   watch(
-    () => datasetStore.dataset,
+    () => [datasetStore.hasDataset, datasetStore.importMode, datasetStore.generatedAt],
     () => {
-      applyQueryToStore();
+      void applyQueryToStore();
     },
     { immediate: true },
   );
@@ -91,7 +91,7 @@ export function useUrlSync() {
   watch(
     () => route.fullPath,
     () => {
-      applyQueryToStore();
+      void applyQueryToStore();
     },
   );
 

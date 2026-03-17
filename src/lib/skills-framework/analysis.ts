@@ -6,7 +6,9 @@ import type {
   NormalizedDataset,
   ProficiencyDetail,
   RoleKey,
+  RoleAnalysisRecord,
   SkillRoleReference,
+  SkillIndexRecord,
   SkillTsc,
   UniqueSkillAnalysis,
 } from './types';
@@ -368,4 +370,115 @@ export function buildCompareRows(results: AnalysisResults | null, role1Key: Role
       prof2: skill2 ? skill2.proficiencyLevels.map((level) => Number(level)).filter(Number.isFinite) : [],
     };
   });
+}
+
+export function buildAnalysisFromRoleAnalyses(roleAnalyses: RoleAnalysisRecord[]): AnalysisResults | null {
+  if (!roleAnalyses.length) {
+    return null;
+  }
+
+  const roles: AnalysisResults['roles'] = {};
+  const globalSkills: AnalysisResults['uniqueSkills'] = {};
+  let totalTscs = 0;
+
+  for (const roleAnalysis of roleAnalyses) {
+    roles[roleAnalysis.roleKey] = {
+      role: roleAnalysis.role,
+      sector: roleAnalysis.sector,
+      track: roleAnalysis.track,
+      description: roleAnalysis.description,
+      performance: roleAnalysis.performance,
+      cwf: roleAnalysis.cwf,
+      uniqueSkills: roleAnalysis.uniqueSkills,
+      tscs: roleAnalysis.tscs,
+    };
+    totalTscs += roleAnalysis.tscs.length;
+
+    for (const skill of roleAnalysis.uniqueSkills) {
+      if (!globalSkills[skill.title]) {
+        globalSkills[skill.title] = {
+          title: skill.title,
+          description: skill.description,
+          roles: [],
+          proficiencies: {},
+          proficiencyLevels: [],
+        };
+      }
+
+      const globalSkill = globalSkills[skill.title];
+      globalSkill.roles.push({
+        key: roleAnalysis.roleKey,
+        name: roleAnalysis.role,
+        sector: roleAnalysis.sector,
+        track: roleAnalysis.track,
+        proficiency: skill.proficiencyLevels.join(', '),
+        proficiencies: [...skill.proficiencyLevels],
+      });
+
+      for (const level of skill.proficiencyLevels) {
+        const localLevel = skill.proficiencies[level];
+        if (!localLevel) {
+          continue;
+        }
+
+        const globalLevel = ensureProficiencyRecord(globalSkill.proficiencies, level, localLevel.proficiencyDescription);
+        pushUnique(globalLevel.knowledgeItems, localLevel.knowledgeItems);
+        pushUnique(globalLevel.abilityItems, localLevel.abilityItems);
+        for (const tsc of localLevel.tscs) {
+          pushUniqueTsc(globalLevel.tscs, tsc);
+        }
+      }
+    }
+  }
+
+  const uniqueSkillTitles = Object.keys(globalSkills).sort((left, right) => left.localeCompare(right));
+  for (const title of uniqueSkillTitles) {
+    globalSkills[title].roles = globalSkills[title].roles
+      .map((role) => ({
+        ...role,
+        proficiencies: sortLevels(role.proficiencies),
+        proficiency: sortLevels(role.proficiencies).join(', '),
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name) || left.track.localeCompare(right.track));
+    globalSkills[title].proficiencyLevels = sortLevels(Object.keys(globalSkills[title].proficiencies));
+  }
+
+  return {
+    roles,
+    roleKeys: roleAnalyses.map((roleAnalysis) => roleAnalysis.roleKey),
+    uniqueSkills: globalSkills,
+    uniqueSkillTitles,
+    totalRoles: roleAnalyses.length,
+    totalUniqueSkills: uniqueSkillTitles.length,
+    totalTscs,
+  };
+}
+
+export function buildAnalysisResultsFromSkillIndex(skillIndex: SkillIndexRecord[], roleKeys: RoleKey[]): AnalysisResults | null {
+  if (!skillIndex.length) {
+    return null;
+  }
+
+  const uniqueSkills: AnalysisResults['uniqueSkills'] = {};
+  for (const skill of skillIndex) {
+    uniqueSkills[skill.title] = skill;
+  }
+
+  const uniqueSkillTitles = skillIndex.map((skill) => skill.title).sort((left, right) => left.localeCompare(right));
+  let totalTscs = 0;
+  for (const skill of skillIndex) {
+    for (const level of skill.proficiencyLevels) {
+      totalTscs += skill.proficiencies[level]?.tscs.length ?? 0;
+    }
+  }
+
+  return {
+    roles: {},
+    roleKeys,
+    uniqueSkills,
+    uniqueSkillTitles,
+    totalRoles: roleKeys.length,
+    totalUniqueSkills: uniqueSkillTitles.length,
+    totalTscs,
+  };
 }

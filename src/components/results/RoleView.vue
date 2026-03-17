@@ -1,5 +1,11 @@
 <template>
-  <div v-if="!results" class="empty-results">
+  <div v-if="explorerStore.isAnalysisLoading" class="empty-results">
+    <div class="empty-results-icon">⏳</div>
+    <h2>Loading analysis</h2>
+    <p>Fetching the selected role analysis.</p>
+  </div>
+
+  <div v-else-if="!results" class="empty-results">
     <div class="empty-results-icon">🎯</div>
     <h2>Ready to explore roles?</h2>
     <p>

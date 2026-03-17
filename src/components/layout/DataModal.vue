@@ -21,6 +21,13 @@
           {{ datasetModeLabel }}
         </div>
 
+        <div
+          v-if="datasetStore.importMode === 'preloaded' && datasetStore.preloadStatusMessage"
+          class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-secondary)]"
+        >
+          {{ datasetStore.preloadStatusMessage }}
+        </div>
+
         <label
           class="block cursor-pointer rounded-[8px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] px-4 py-6 text-center transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
           @dragover.prevent
@@ -70,13 +77,13 @@ const fileInput = ref<HTMLInputElement | null>(null);
 
 const datasetModeLabel = computed(() => {
   if (datasetStore.isPreloading) {
-    return 'Loading bundled dataset';
+    return 'Bundled dataset';
   }
   if (datasetStore.importMode === 'upload') {
     return 'Uploaded workbooks';
   }
   if (datasetStore.importMode === 'preloaded') {
-    return 'Bundled dataset';
+    return datasetStore.dataSource === 'fallback-memory' ? 'Bundled dataset (fallback memory mode)' : 'Bundled dataset (IndexedDB cache)';
   }
   return 'No dataset loaded';
 });

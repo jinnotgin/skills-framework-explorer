@@ -1,5 +1,11 @@
 <template>
-  <div v-if="!results" class="empty-results">
+  <div v-if="loadingState" class="empty-results">
+    <div class="empty-results-icon">⏳</div>
+    <h2>Loading skills</h2>
+    <p>Preparing the skill index from the current dataset source.</p>
+  </div>
+
+  <div v-else-if="!results" class="empty-results">
     <div class="empty-results-icon">💡</div>
     <h2>Skill view appears after analysis</h2>
     <p>Analyse one or more roles to browse the normalized skills across them.</p>
@@ -114,7 +120,6 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Clipboard } from 'lucide-vue-next';
 
-import { buildSkillsIndex } from '../../lib/skills-framework/analysis';
 import UiButton from '../ui/UiButton.vue';
 import UiInput from '../ui/UiInput.vue';
 import { useDatasetStore } from '../../stores/dataset';
@@ -131,9 +136,8 @@ const debouncedSkillQuery = ref(explorerStore.skillSearchQuery);
 let debounceTimer: number | undefined;
 
 const showAllSkills = computed(() => datasetStore.hasDataset && !explorerStore.selectedRoleKeys.length);
-const results = computed(() =>
-  showAllSkills.value ? buildSkillsIndex(datasetStore.dataset) : explorerStore.analysisResults,
-);
+const results = computed(() => (showAllSkills.value ? datasetStore.globalSkillsResults : explorerStore.analysisResults));
+const loadingState = computed(() => explorerStore.isAnalysisLoading || (showAllSkills.value && datasetStore.isGlobalSkillsLoading));
 const allSkills = computed(() =>
   results.value?.uniqueSkillTitles.map((title) => results.value!.uniqueSkills[title]) ?? [],
 );
@@ -174,6 +178,16 @@ watch(
     }
     debouncedSkillQuery.value = value;
   },
+);
+
+watch(
+  showAllSkills,
+  (value) => {
+    if (value) {
+      void datasetStore.ensureGlobalSkillsLoaded();
+    }
+  },
+  { immediate: true },
 );
 
 onBeforeUnmount(() => {

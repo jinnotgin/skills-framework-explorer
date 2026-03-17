@@ -79,7 +79,10 @@ const roleSelectorLabel = computed(() => {
 
 const statusText = computed(() => {
   if (datasetStore.isPreloading) {
-    return 'Loading data';
+    return 'Syncing';
+  }
+  if (datasetStore.importMode === 'preloaded') {
+    return datasetStore.dataSource === 'fallback-memory' ? 'Fallback memory mode' : 'Ready';
   }
   if (datasetStore.loadedCount === 0) {
     return 'No files loaded';
@@ -91,8 +94,14 @@ const statusText = computed(() => {
 });
 
 const statusDotClass = computed(() => {
-  if (datasetStore.isPreloading || datasetStore.loadedCount < 3) {
-    return datasetStore.isPreloading ? 'bg-[var(--warning)] animate-pulse' : 'bg-[var(--warning)]';
+  if (datasetStore.isPreloading) {
+    return 'bg-[var(--warning)] animate-pulse';
+  }
+  if (datasetStore.importMode === 'preloaded') {
+    return datasetStore.dataSource === 'fallback-memory' ? 'bg-[var(--warning)]' : 'bg-[var(--success)]';
+  }
+  if (datasetStore.loadedCount < 3) {
+    return 'bg-[var(--warning)]';
   }
   if (datasetStore.loadedCount === 3) {
     return 'bg-[var(--success)]';

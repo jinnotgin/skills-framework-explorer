@@ -4,9 +4,16 @@ export type WorkbookKind = 'framework' | 'tscMap' | 'unique';
 export type ImportMode = 'none' | 'preloaded' | 'upload';
 export type CompareFilter = 'all' | 'shared' | 'diff' | 'role1' | 'role2';
 export type DetailKind = 'role-skill' | 'compare-skill' | 'skill-centric';
+export type PreloadedDataSource = 'indexeddb' | 'fallback-memory';
+export type DatasetSyncState = 'idle' | 'checking' | 'downloading' | 'rebuilding' | 'ready' | 'error';
 
 export interface PreloadedDatasetMetadata {
   generatedAt: string;
+}
+
+export interface DatasetMetaSnapshot {
+  generatedAt: string;
+  source: PreloadedDataSource;
 }
 
 export interface DatasetRawData {
@@ -154,3 +161,33 @@ export interface CompareSkillRow {
   prof1: number[];
   prof2: number[];
 }
+
+export interface DatasetMetaRecord {
+  id: 'current';
+  app: string;
+  schemaVersion: number;
+  generatedAt: string;
+  source: 'preloaded';
+  rebuiltAt: string;
+}
+
+export interface RoleCatalogRecord {
+  roleKey: RoleKey;
+  role: string;
+  sector: string;
+  track: string;
+  description: string;
+  performance: string;
+  searchText: string;
+}
+
+export interface RoleCwfRecord {
+  roleKey: RoleKey;
+  cwf: CriticalWorkFunction[];
+}
+
+export interface RoleAnalysisRecord extends RoleAnalysis {
+  roleKey: RoleKey;
+}
+
+export interface SkillIndexRecord extends GlobalSkillAnalysis {}

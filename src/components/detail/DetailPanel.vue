@@ -271,7 +271,6 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { ChevronDown, X } from 'lucide-vue-next';
 import { useRoute } from 'vue-router';
 
-import { buildSkillsIndex } from '../../lib/skills-framework/analysis';
 import { sortLevels } from '../../lib/skills-framework/utils';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
@@ -296,12 +295,22 @@ const analysisResults = computed(() => {
   }
 
   if (route.path === '/skills' && datasetStore.hasDataset && !explorerStore.selectedRoleKeys.length) {
-    return buildSkillsIndex(datasetStore.dataset);
+    return datasetStore.globalSkillsResults;
   }
 
   return explorerStore.analysisResults;
 });
 const detail = computed(() => explorerStore.detail);
+
+watch(
+  () => [route.path, datasetStore.hasDataset, explorerStore.selectedRoleKeys.length],
+  ([path, hasDataset, selectedCount]) => {
+    if (path === '/skills' && hasDataset && selectedCount === 0) {
+      void datasetStore.ensureGlobalSkillsLoaded();
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   () => detail.value.skillTitle,

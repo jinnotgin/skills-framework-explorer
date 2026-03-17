@@ -201,7 +201,7 @@ const allVisibleSelected = computed(() => visibleRoles.value.length > 0 && visib
 
 const selectedRoleSummaries = computed(() =>
   draftSelectedRoleKeys.value
-    .map((key) => datasetStore.dataset?.roleByKey[key] ?? null)
+    .map((key) => datasetStore.roleByKey[key] ?? null)
     .filter((role): role is NonNullable<typeof role> => Boolean(role)),
 );
 
@@ -224,9 +224,14 @@ const analysisMessage = computed(() => {
   return 'Selection matches the current analysis.';
 });
 
-const canApplySelection = computed(() => draftSelectedRoleKeys.value.length > 0 || Boolean(explorerStore.analysisResults));
+const canApplySelection = computed(
+  () => !explorerStore.isAnalysisLoading && (draftSelectedRoleKeys.value.length > 0 || Boolean(explorerStore.analysisResults)),
+);
 
 const analyzeLabel = computed(() => {
+  if (explorerStore.isAnalysisLoading) {
+    return 'Loading...';
+  }
   if (!explorerStore.analysisResults) {
     return 'Run analysis';
   }
@@ -300,9 +305,9 @@ function clearDraftSelection() {
   draftSelectedRoleKeys.value = [];
 }
 
-function analyze() {
+async function analyze() {
   explorerStore.setSelection(draftSelectedRoleKeys.value);
-  explorerStore.runAnalysis(datasetStore.dataset, draftSelectedRoleKeys.value);
+  await explorerStore.runAnalysis(datasetStore.dataset, draftSelectedRoleKeys.value);
   uiStore.setSidebarOpen(false);
   router.push('/roles');
 }

@@ -29,10 +29,16 @@
               aria-hidden="true"
             ></div>
             <h2>Loading data</h2>
-            <p>Parsing workbooks and rebuilding the dataset.</p>
+            <p>{{ datasetStore.preloadStatusMessage || 'Preparing the bundled dataset.' }}</p>
           </div>
         </div>
         <div v-else class="workspace-surface">
+          <div
+            v-if="datasetStore.importMode === 'preloaded' && datasetStore.dataSource === 'fallback-memory'"
+            class="mb-4 rounded-[10px] border border-[var(--warning)] bg-[var(--warning-soft)] px-4 py-3 text-sm text-[var(--text-primary)]"
+          >
+            {{ datasetStore.preloadStatusMessage }}
+          </div>
           <RouterView />
         </div>
       </section>

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
-import { buildAnalysis } from '../lib/skills-framework/analysis';
+import { buildAnalysis, buildAnalysisFromRoleAnalyses } from '../lib/skills-framework/analysis';
+import { preloadedDatasetRepository } from '../lib/skills-framework/preloadedRepository';
 import type { AnalysisResults, CompareFilter, DetailState, NormalizedDataset, RoleKey } from '../lib/skills-framework/types';
 
 interface ExplorerState {
@@ -8,6 +9,7 @@ interface ExplorerState {
   analyzedRoleKeys: RoleKey[];
   activeRoleKey: RoleKey | null;
   analysisResults: AnalysisResults | null;
+  isAnalysisLoading: boolean;
   roleSearchQuery: string;
   sectorFilter: string;
   skillSearchQuery: string;
@@ -18,6 +20,7 @@ interface ExplorerState {
     role2: RoleKey | null;
   };
   detail: DetailState;
+  analysisRequestId: number;
 }
 
 function emptyDetailState(): DetailState {
@@ -38,6 +41,7 @@ export const useExplorerStore = defineStore('explorer', {
     analyzedRoleKeys: [],
     activeRoleKey: null,
     analysisResults: null,
+    isAnalysisLoading: false,
     roleSearchQuery: '',
     sectorFilter: '',
     skillSearchQuery: '',
@@ -48,6 +52,7 @@ export const useExplorerStore = defineStore('explorer', {
       role2: null,
     },
     detail: emptyDetailState(),
+    analysisRequestId: 0,
   }),
   getters: {
     selectedRoleSet: (state) => new Set(state.selectedRoleKeys),
@@ -60,6 +65,8 @@ export const useExplorerStore = defineStore('explorer', {
       this.analyzedRoleKeys = [];
       this.activeRoleKey = null;
       this.analysisResults = null;
+      this.isAnalysisLoading = false;
+      this.analysisRequestId += 1;
       this.compareSelection = { role1: null, role2: null };
       this.closeDetail();
     },
@@ -100,13 +107,33 @@ export const useExplorerStore = defineStore('explorer', {
         this.ensureCompareSelection();
       }
     },
-    runAnalysis(dataset: NormalizedDataset | null, roleKeys?: RoleKey[]) {
+    async runAnalysis(dataset: NormalizedDataset | null = null, roleKeys?: RoleKey[]) {
       const nextKeys = roleKeys ?? this.selectedRoleKeys;
       this.analyzedRoleKeys = [...nextKeys];
-      this.analysisResults = buildAnalysis(dataset, nextKeys);
-      this.ensureActiveRole();
-      this.ensureCompareSelection();
-      this.closeDetail();
+
+      const requestId = this.analysisRequestId + 1;
+      this.analysisRequestId = requestId;
+      this.isAnalysisLoading = true;
+
+      try {
+        const nextResults =
+          dataset || nextKeys.length === 0
+            ? buildAnalysis(dataset, nextKeys)
+            : buildAnalysisFromRoleAnalyses(await preloadedDatasetRepository.getRoleAnalyses(nextKeys));
+
+        if (this.analysisRequestId !== requestId) {
+          return;
+        }
+
+        this.analysisResults = nextResults;
+        this.ensureActiveRole();
+        this.ensureCompareSelection();
+        this.closeDetail();
+      } finally {
+        if (this.analysisRequestId === requestId) {
+          this.isAnalysisLoading = false;
+        }
+      }
     },
     setActiveRole(roleKey: RoleKey | null) {
       this.activeRoleKey = roleKey;
