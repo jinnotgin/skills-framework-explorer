@@ -177,12 +177,28 @@ const roleOptions = computed(() =>
 
 const role1 = computed({
   get: () => explorerStore.compareSelection.role1,
-  set: (value: string | null) => explorerStore.setCompareSelection(value, explorerStore.compareSelection.role2),
+  set: (value: string | null) => {
+    const currentRole2 = explorerStore.compareSelection.role2;
+    if (value && value === currentRole2) {
+      explorerStore.setCompareSelection(currentRole2, explorerStore.compareSelection.role1);
+      return;
+    }
+
+    explorerStore.setCompareSelection(value, currentRole2);
+  },
 });
 
 const role2 = computed({
   get: () => explorerStore.compareSelection.role2,
-  set: (value: string | null) => explorerStore.setCompareSelection(explorerStore.compareSelection.role1, value),
+  set: (value: string | null) => {
+    const currentRole1 = explorerStore.compareSelection.role1;
+    if (value && value === currentRole1) {
+      explorerStore.setCompareSelection(explorerStore.compareSelection.role2, currentRole1);
+      return;
+    }
+
+    explorerStore.setCompareSelection(currentRole1, value);
+  },
 });
 
 const role1Value = computed({
