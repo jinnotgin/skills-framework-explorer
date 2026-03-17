@@ -71,3 +71,6 @@ node_modules/
 .dataconnect
 .firebaserc
 firebase.json
+
+# apple
+.DS_Store
