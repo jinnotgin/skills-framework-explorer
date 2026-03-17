@@ -11,7 +11,7 @@
     <p>
       {{
         datasetStore.hasDataset
-          ? 'Select roles in the left rail and run analysis to open the role workspace.'
+          ? 'Select roles and run analysis to open the role workspace.'
           : 'Load the bundled data or upload the latest workbooks, then select roles to begin.'
       }}
     </p>
