@@ -71,18 +71,26 @@
         </button>
       </div>
 
-      <table v-else-if="filteredSkills.length" class="compare-table skills-table">
-        <thead>
+      <UiVirtualTable
+        v-else-if="filteredSkills.length"
+        class="max-h-[min(70vh,48rem)]"
+        table-class="compare-table skills-table"
+        :items="filteredSkills"
+        :item-height="92"
+        :column-count="3"
+        item-key="skillKey"
+      >
+        <template #header>
           <tr>
             <th>Skill</th>
             <th>Roles</th>
             <th>Levels</th>
           </tr>
-        </thead>
-        <tbody>
+        </template>
+
+        <template #row="{ item: skill, rowStyle }">
           <tr
-            v-for="skill in filteredSkills"
-            :key="skill.skillKey"
+            :style="rowStyle"
             class="skills-table-row"
             :class="{ active: explorerStore.detail.kind === 'skill-centric' && explorerStore.detail.skillKey === skill.skillKey }"
             @click="explorerStore.openSkillCentricDetail(skill.skillKey, skill.title)"
@@ -109,8 +117,8 @@
               </div>
             </td>
           </tr>
-        </tbody>
-      </table>
+        </template>
+      </UiVirtualTable>
 
       <div v-else class="px-4 py-16 text-center">
         <div class="text-base font-semibold text-[var(--text-primary)]">No matching skills</div>
@@ -129,6 +137,7 @@ import { Clipboard } from 'lucide-vue-next';
 
 import UiButton from '../ui/UiButton.vue';
 import UiInput from '../ui/UiInput.vue';
+import UiVirtualTable from '../ui/UiVirtualTable.vue';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
 import { useUiStore } from '../../stores/ui';

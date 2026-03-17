@@ -112,19 +112,27 @@
         </div>
       </div>
 
-      <table class="dense-table">
-        <thead>
+      <UiVirtualTable
+        v-if="filteredSkills.length"
+        class="max-h-[min(60vh,42rem)]"
+        table-class="dense-table"
+        :items="filteredSkills"
+        :item-height="84"
+        :column-count="4"
+        item-key="skillKey"
+      >
+        <template #header>
           <tr>
             <th>Skill</th>
             <th>Type</th>
             <th>Levels</th>
             <th>Flags</th>
           </tr>
-        </thead>
-        <tbody>
+        </template>
+
+        <template #row="{ item: skill, rowStyle }">
           <tr
-            v-for="skill in filteredSkills"
-            :key="skill.skillKey"
+            :style="rowStyle"
             :class="{ active: isActiveSkill(skill.skillKey, activeRoleKey) }"
             @click="openDetail(skill.skillKey, skill.title, activeRoleKey)"
           >
@@ -146,8 +154,8 @@
               </div>
             </td>
           </tr>
-        </tbody>
-      </table>
+        </template>
+      </UiVirtualTable>
 
       <div v-if="!filteredSkills.length" class="border-t border-[var(--border-default)] px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
         No skills match this filter.
@@ -162,6 +170,7 @@ import { computed, ref, watch } from 'vue';
 import UiButton from '../ui/UiButton.vue';
 import UiInput from '../ui/UiInput.vue';
 import UiSelect from '../ui/UiSelect.vue';
+import UiVirtualTable from '../ui/UiVirtualTable.vue';
 import { formatRoleLabel } from '../../lib/skills-framework/utils';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
