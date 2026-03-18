@@ -1,4 +1,4 @@
-import { hashString, makeRoleKey, safeStr, sortLevels, toBool } from './utils';
+import { getLevelSortValue, hashString, makeRoleKey, safeStr, sortLevels, toBool } from './utils';
 import type {
   AnalysisResults,
   CompareSkillRow,
@@ -626,8 +626,8 @@ export function buildCompareRows(results: AnalysisResults | null, role1Key: Role
       subtitle: display.subtitle,
       skill1,
       skill2,
-      prof1: skill1 ? skill1.proficiencyLevels.map((level) => Number(level)).filter(Number.isFinite) : [],
-      prof2: skill2 ? skill2.proficiencyLevels.map((level) => Number(level)).filter(Number.isFinite) : [],
+      prof1: skill1 ? skill1.proficiencyLevels.map((level) => getLevelSortValue(level)).filter((level): level is number => level !== null) : [],
+      prof2: skill2 ? skill2.proficiencyLevels.map((level) => getLevelSortValue(level)).filter((level): level is number => level !== null) : [],
     };
   });
 }

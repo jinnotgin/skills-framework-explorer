@@ -280,14 +280,34 @@ select {
     table-layout: fixed;
   }
 
-  .skills-table th:nth-child(1),
-  .skills-table td:nth-child(1) {
-    width: 24%;
+  .skills-table .skills-table-skill-column {
+    width: 18rem;
+  }
+
+  .skills-table .skills-table-levels-column {
+    width: 128px;
   }
 
   .skills-table th:nth-child(3),
   .skills-table td:nth-child(3) {
-    width: 12%;
+    padding-left: 0.5rem;
+    padding-right: 1rem;
+  }
+
+  .skills-table-roles {
+    @apply flex max-h-16 flex-wrap content-start gap-2 overflow-hidden;
+  }
+
+  .skills-table-levels {
+    @apply grid justify-start gap-1;
+    grid-template-columns: repeat(3, 32px);
+  }
+
+  .skills-table .level-badge {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0;
   }
 
   .skills-table-row {

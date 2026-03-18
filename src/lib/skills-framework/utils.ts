@@ -1,5 +1,17 @@
 import type { RawRow, RoleKey, RoleSummary } from './types';
 
+const LEVEL_ALIAS_MAP = {
+  basic: { sortValue: 1, badgeLabel: 'B', fullLabel: 'Basic' },
+  intermediate: { sortValue: 2, badgeLabel: 'I', fullLabel: 'Intermediate' },
+  intermidate: { sortValue: 2, badgeLabel: 'I', fullLabel: 'Intermediate' },
+  advanced: { sortValue: 3, badgeLabel: 'A', fullLabel: 'Advanced' },
+} as const;
+
+function resolveLevelAlias(level: string) {
+  const normalized = safeStr(level).toLowerCase();
+  return LEVEL_ALIAS_MAP[normalized as keyof typeof LEVEL_ALIAS_MAP] ?? null;
+}
+
 export function safeStr(value: unknown): string {
   return value === null || value === undefined ? '' : String(value).trim();
 }
@@ -42,27 +54,65 @@ export function uniqueBy<T>(items: T[], getKey: (item: T) => string): T[] {
   return output;
 }
 
+export function getLevelSortValue(level: string): number | null {
+  const alias = resolveLevelAlias(level);
+  if (alias) {
+    return alias.sortValue;
+  }
+
+  const numericValue = Number(level);
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
 export function sortLevels(levels: Iterable<string>): string[] {
   return Array.from(levels).sort((left, right) => {
-    const leftNum = Number(left);
-    const rightNum = Number(right);
-    const leftNumeric = Number.isFinite(leftNum);
-    const rightNumeric = Number.isFinite(rightNum);
+    const leftOrder = getLevelSortValue(left);
+    const rightOrder = getLevelSortValue(right);
+    const leftKnown = leftOrder !== null;
+    const rightKnown = rightOrder !== null;
 
-    if (leftNumeric && rightNumeric) {
-      return leftNum - rightNum;
+    if (leftKnown && rightKnown && leftOrder !== rightOrder) {
+      return leftOrder - rightOrder;
     }
 
-    if (leftNumeric) {
+    if (leftKnown && !rightKnown) {
       return -1;
     }
 
-    if (rightNumeric) {
+    if (!leftKnown && rightKnown) {
       return 1;
     }
 
     return left.localeCompare(right);
   });
+}
+
+export function formatLevelBadge(level: string): string {
+  return resolveLevelAlias(level)?.badgeLabel ?? safeStr(level);
+}
+
+export function formatLevelLabel(level: string): string {
+  return resolveLevelAlias(level)?.fullLabel ?? safeStr(level);
+}
+
+export function formatLevelHeading(level: string): string {
+  if (resolveLevelAlias(level)) {
+    return formatLevelLabel(level);
+  }
+
+  const label = safeStr(level);
+  return label ? `Level ${label}` : 'Level';
+}
+
+export function formatLevelSummary(levels: Iterable<string>): string {
+  const orderedLevels = sortLevels(levels);
+  if (!orderedLevels.length) {
+    return '';
+  }
+
+  const hasAlias = orderedLevels.some((level) => resolveLevelAlias(level));
+  const labels = orderedLevels.map((level) => formatLevelLabel(level));
+  return hasAlias ? labels.join(', ') : `Level ${labels.join(', ')}`;
 }
 
 export function hashString(value: string): string {

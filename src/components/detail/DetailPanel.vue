@@ -48,14 +48,14 @@
                   type="button"
                   @click="activeLevel = level"
                 >
-                  {{ level }}
+                  {{ formatLevelBadge(level) }}
                 </button>
               </div>
 
               <article v-if="currentRoleSkillLevel" class="detail-card">
                 <div class="detail-card-header">
-                  <span class="level-badge">{{ activeLevel }}</span>
-                  <div class="text-sm font-semibold text-[var(--text-primary)]">Level {{ activeLevel }}</div>
+                  <span class="level-badge">{{ formatLevelBadge(activeLevel) }}</span>
+                  <div class="text-sm font-semibold text-[var(--text-primary)]">{{ formatLevelHeading(activeLevel) }}</div>
                 </div>
                 <p v-if="currentRoleSkillLevel.proficiencyDescription" class="detail-blurb">
                   {{ currentRoleSkillLevel.proficiencyDescription }}
@@ -129,14 +129,14 @@
                   type="button"
                   @click="activeLevel = level.level"
                 >
-                  {{ level.level }}
+                  {{ formatLevelBadge(level.level) }}
                 </button>
               </div>
 
               <article v-if="currentCompareLevel" class="detail-card">
                 <div class="detail-card-header">
-                  <span class="level-badge">{{ currentCompareLevel.level }}</span>
-                  <div class="text-sm font-semibold text-[var(--text-primary)]">Level {{ currentCompareLevel.level }}</div>
+                  <span class="level-badge">{{ formatLevelBadge(currentCompareLevel.level) }}</span>
+                  <div class="text-sm font-semibold text-[var(--text-primary)]">{{ formatLevelHeading(currentCompareLevel.level) }}</div>
                 </div>
                 <p v-if="currentCompareLevel.proficiencyDescription" class="detail-blurb">{{ currentCompareLevel.proficiencyDescription }}</p>
 
@@ -198,14 +198,14 @@
                   type="button"
                   @click="activeLevel = level"
                 >
-                  {{ level }}
+                  {{ formatLevelBadge(level) }}
                 </button>
               </div>
 
               <article v-if="currentSkillCentricLevel" class="detail-card">
                 <div class="detail-card-header">
-                  <span class="level-badge">{{ activeLevel }}</span>
-                  <div class="text-sm font-semibold text-[var(--text-primary)]">Level {{ activeLevel }}</div>
+                  <span class="level-badge">{{ formatLevelBadge(activeLevel) }}</span>
+                  <div class="text-sm font-semibold text-[var(--text-primary)]">{{ formatLevelHeading(activeLevel) }}</div>
                 </div>
                 <p v-if="currentSkillCentricLevel.proficiencyDescription" class="detail-blurb">
                   {{ currentSkillCentricLevel.proficiencyDescription }}
@@ -257,7 +257,7 @@
                   <div class="text-sm font-semibold text-[var(--text-primary)]">{{ role.name }}</div>
                   <div class="text-xs text-[var(--text-muted)]">{{ role.sector }} · {{ role.track }}</div>
                 </div>
-                <span class="level-badge">{{ role.proficiency }}</span>
+                <span class="level-badge">{{ formatRoleLevelBadge(role.proficiencies ?? []) }}</span>
               </div>
             </div>
           </section>
@@ -272,7 +272,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { ChevronDown, X } from 'lucide-vue-next';
 import { useRoute } from 'vue-router';
 
-import { sortLevels } from '../../lib/skills-framework/utils';
+import { formatLevelBadge, formatLevelHeading, formatLevelSummary, sortLevels } from '../../lib/skills-framework/utils';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
 import { useUiStore } from '../../stores/ui';
@@ -367,8 +367,8 @@ const compareSkillDetail = computed(() => {
     description: skill1?.description || skill2?.description || 'No description available.',
     role1Label: role1.role,
     role2Label: role2.role,
-    role1Levels: skill1 ? `Level ${skill1.proficiencyLevels.join(', ')}` : 'Not required',
-    role2Levels: skill2 ? `Level ${skill2.proficiencyLevels.join(', ')}` : 'Not required',
+    role1Levels: skill1 ? formatLevelSummary(skill1.proficiencyLevels) : 'Not required',
+    role2Levels: skill2 ? formatLevelSummary(skill2.proficiencyLevels) : 'Not required',
     levels: allLevels.map((level) => {
       const left = skill1?.proficiencies[level];
       const right = skill2?.proficiencies[level];
@@ -449,5 +449,9 @@ watch(
 
 function toggleSection(section: keyof typeof sectionOpen) {
   sectionOpen[section] = !sectionOpen[section];
+}
+
+function formatRoleLevelBadge(levels: string[]) {
+  return levels.map((level) => formatLevelBadge(level)).join(', ');
 }
 </script>

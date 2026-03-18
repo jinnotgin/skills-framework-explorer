@@ -143,7 +143,7 @@
             <td>{{ skill.skillType || 'N/A' }}</td>
             <td>
               <div class="flex flex-wrap gap-2">
-                <span v-for="level in skill.proficiencyLevels" :key="level" class="level-badge">{{ level }}</span>
+                <span v-for="level in skill.proficiencyLevels" :key="level" class="level-badge">{{ formatLevelBadge(level) }}</span>
               </div>
             </td>
             <td>
@@ -171,7 +171,7 @@ import UiButton from '../ui/UiButton.vue';
 import UiInput from '../ui/UiInput.vue';
 import UiSelect from '../ui/UiSelect.vue';
 import UiVirtualTable from '../ui/UiVirtualTable.vue';
-import { formatRoleLabel } from '../../lib/skills-framework/utils';
+import { formatLevelBadge, formatRoleLabel } from '../../lib/skills-framework/utils';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
 import { useUiStore } from '../../stores/ui';

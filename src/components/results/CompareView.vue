@@ -96,7 +96,7 @@
                     class="level-badge"
                     :class="{ 'border-[var(--warning)] bg-[var(--warning-soft)]': highlightLeft(row, level) }"
                   >
-                    {{ level }}
+                    {{ formatLevelBadge(level) }}
                   </span>
                 </div>
                 <div
@@ -104,7 +104,7 @@
                   class="space-y-1 text-xs text-[var(--text-muted)]"
                 >
                   <div v-for="level in row.skill1.proficiencyLevels.slice().reverse()" :key="`left-${row.title}-${level}`">
-                    <span class="font-medium text-[var(--text-secondary)]">Level {{ level }}:</span>
+                    <span class="font-medium text-[var(--text-secondary)]">{{ formatLevelHeading(level) }}:</span>
                     {{ levelDescription(row.skill1, level) || 'No description available.' }}
                   </div>
                 </div>
@@ -120,7 +120,7 @@
                     class="level-badge"
                     :class="{ 'border-[var(--warning)] bg-[var(--warning-soft)]': highlightRight(row, level) }"
                   >
-                    {{ level }}
+                    {{ formatLevelBadge(level) }}
                   </span>
                 </div>
                 <div
@@ -128,7 +128,7 @@
                   class="space-y-1 text-xs text-[var(--text-muted)]"
                 >
                   <div v-for="level in row.skill2.proficiencyLevels.slice().reverse()" :key="`right-${row.title}-${level}`">
-                    <span class="font-medium text-[var(--text-secondary)]">Level {{ level }}:</span>
+                    <span class="font-medium text-[var(--text-secondary)]">{{ formatLevelHeading(level) }}:</span>
                     {{ levelDescription(row.skill2, level) || 'No description available.' }}
                   </div>
                 </div>
@@ -149,7 +149,7 @@ import { FileText } from 'lucide-vue-next';
 import UiButton from '../ui/UiButton.vue';
 import UiSelect from '../ui/UiSelect.vue';
 import { buildCompareRows } from '../../lib/skills-framework/analysis';
-import { formatRoleLabel } from '../../lib/skills-framework/utils';
+import { formatLevelBadge, formatLevelHeading, formatRoleLabel, getLevelSortValue } from '../../lib/skills-framework/utils';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
 import { useUiStore } from '../../stores/ui';
@@ -245,17 +245,17 @@ function levelDescription(skill: NonNullable<(typeof compareRows.value)[number][
 }
 
 function highlightLeft(row: (typeof compareRows.value)[number], level: string) {
-  const current = Number(level);
+  const current = getLevelSortValue(level);
   const leftMax = row.prof1.length ? Math.max(...row.prof1) : null;
   const rightMax = row.prof2.length ? Math.max(...row.prof2) : null;
-  return leftMax !== null && rightMax !== null && leftMax > rightMax && current === leftMax;
+  return current !== null && leftMax !== null && rightMax !== null && leftMax > rightMax && current === leftMax;
 }
 
 function highlightRight(row: (typeof compareRows.value)[number], level: string) {
-  const current = Number(level);
+  const current = getLevelSortValue(level);
   const leftMax = row.prof1.length ? Math.max(...row.prof1) : null;
   const rightMax = row.prof2.length ? Math.max(...row.prof2) : null;
-  return leftMax !== null && rightMax !== null && rightMax > leftMax && current === rightMax;
+  return current !== null && leftMax !== null && rightMax !== null && rightMax > leftMax && current === rightMax;
 }
 
 function isActiveRow(skillKey: string) {

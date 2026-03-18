@@ -65,7 +65,7 @@
             <span v-if="skill.roles.length > 2" class="inline-flex items-center text-xs text-[var(--text-muted)]">+{{ skill.roles.length - 2 }} more</span>
           </div>
           <div class="mt-3 flex flex-wrap gap-2">
-            <span v-for="level in skill.proficiencyLevels" :key="level" class="level-badge">{{ level }}</span>
+            <span v-for="level in skill.proficiencyLevels" :key="level" class="level-badge">{{ formatLevelBadge(level) }}</span>
           </div>
         </button>
       </div>
@@ -79,6 +79,12 @@
         :column-count="3"
         item-key="skillKey"
       >
+        <template #colgroup>
+          <col class="skills-table-skill-column" />
+          <col class="skills-table-roles-column" />
+          <col class="skills-table-levels-column" />
+        </template>
+
         <template #header>
           <tr>
             <th>Skill</th>
@@ -99,7 +105,7 @@
               <div v-if="skill.subtitle" class="mt-1 text-xs text-[var(--text-muted)]">{{ skill.subtitle }}</div>
             </td>
             <td>
-              <div class="flex flex-wrap gap-2">
+              <div class="skills-table-roles">
                 <span
                   v-for="role in skill.roles.slice(0, 3)"
                   :key="role.key"
@@ -111,8 +117,8 @@
               </div>
             </td>
             <td>
-              <div class="flex flex-wrap gap-2">
-                <span v-for="level in skill.proficiencyLevels" :key="level" class="level-badge">{{ level }}</span>
+              <div class="skills-table-levels">
+                <span v-for="level in skill.proficiencyLevels" :key="level" class="level-badge">{{ formatLevelBadge(level) }}</span>
               </div>
             </td>
           </tr>
@@ -137,6 +143,7 @@ import UiButton from '../ui/UiButton.vue';
 import UiCopyButton from '../ui/UiCopyButton.vue';
 import UiInput from '../ui/UiInput.vue';
 import UiVirtualTable from '../ui/UiVirtualTable.vue';
+import { formatLevelBadge } from '../../lib/skills-framework/utils';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
 import { useUiStore } from '../../stores/ui';
