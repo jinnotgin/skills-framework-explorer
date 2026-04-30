@@ -302,6 +302,22 @@ export function createNormalizedDataset(rawData: DatasetRawData | null): Normali
   };
 }
 
+export function createPreloadedDatasetJson(data: DatasetRawData | null): DatasetRawData | null {
+  if (!data) {
+    return null;
+  }
+
+  return {
+    generatedAt: data.generatedAt ?? '',
+    jobRoleDescriptions: data.jobRoleDescriptions ?? [],
+    jobRoleTcsCcs: data.jobRoleTcsCcs ?? [],
+    tscKAndA: data.tscKAndA ?? [],
+    tscToUnique: data.tscToUnique ?? [],
+    uniqueSkillsList: data.uniqueSkillsList ?? [],
+    jobRoleCwfKt: data.jobRoleCwfKt ?? [],
+  };
+}
+
 export function buildWorkbookStatus(files: File[]): Record<WorkbookKind, { loaded: boolean; filename: string }> {
   const status = {
     framework: { loaded: false, filename: '' },

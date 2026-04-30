@@ -16,9 +16,20 @@
       </div>
 
       <div class="space-y-4 px-5 py-5">
-        <div class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-          <span class="font-medium text-[var(--text-primary)]">Source:</span>
-          {{ datasetModeLabel }}
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-secondary)]">
+          <div>
+            <span class="font-medium text-[var(--text-primary)]">Source:</span>
+            {{ datasetModeLabel }}
+          </div>
+          <button
+            v-if="canExportUploadedJson"
+            class="inline-flex h-8 items-center gap-2 rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            type="button"
+            @click="handleExportJson"
+          >
+            <Download class="h-4 w-4" />
+            Export JSON
+          </button>
         </div>
 
         <div
@@ -64,7 +75,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Upload, X } from 'lucide-vue-next';
+import { Download, Upload, X } from 'lucide-vue-next';
 
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
@@ -94,6 +105,8 @@ const fileStatuses = computed(() => [
   { label: 'Unique skills list', loaded: datasetStore.workbookStatus.unique.loaded },
 ]);
 
+const canExportUploadedJson = computed(() => datasetStore.importMode === 'upload' && Boolean(datasetStore.dataset));
+
 async function processFiles(files: File[]) {
   if (!files.length) {
     return;
@@ -114,5 +127,21 @@ async function handleFileInput(event: Event) {
   if (fileInput.value) {
     fileInput.value.value = '';
   }
+}
+
+function handleExportJson() {
+  const data = datasetStore.exportUploadedDatasetJson();
+  if (!data) {
+    return;
+  }
+
+  const blob = new Blob([`${JSON.stringify(data, null, 2)}\n`], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  link.href = url;
+  link.download = `skills-framework-data-${timestamp}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 </script>

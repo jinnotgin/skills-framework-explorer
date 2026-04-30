@@ -245,6 +245,22 @@ select {
     @apply bg-[var(--primary-soft)];
   }
 
+  .role-skills-table {
+    table-layout: fixed;
+  }
+
+  .role-skills-table .role-skills-table-type-column {
+    width: 18rem;
+  }
+
+  .role-skills-table .role-skills-table-levels-column {
+    width: 8.5rem;
+  }
+
+  .role-skills-table .role-skills-table-flags-column {
+    width: 10rem;
+  }
+
   .compare-table {
     @apply w-full border-collapse text-sm;
   }

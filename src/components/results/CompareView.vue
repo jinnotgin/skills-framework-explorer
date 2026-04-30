@@ -169,10 +169,12 @@ const filters = [
 const results = computed(() => explorerStore.analysisResults);
 
 const roleOptions = computed(() =>
-  results.value?.roleKeys.map((roleKey) => ({
-    key: roleKey,
-    label: formatRoleLabel(results.value!.roles[roleKey]),
-  })) ?? [],
+  (
+    results.value?.roleKeys.map((roleKey) => ({
+      key: roleKey,
+      label: formatRoleLabel(results.value!.roles[roleKey]),
+    })) ?? []
+  ).sort((left, right) => left.label.localeCompare(right.label)),
 );
 
 const role1 = computed({

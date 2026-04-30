@@ -115,12 +115,19 @@
       <UiVirtualTable
         v-if="filteredSkills.length"
         :contained="false"
-        table-class="dense-table"
+        table-class="dense-table role-skills-table"
         :items="filteredSkills"
         :item-height="84"
         :column-count="4"
         item-key="skillKey"
       >
+        <template #colgroup>
+          <col class="role-skills-table-skill-column" />
+          <col class="role-skills-table-type-column" />
+          <col class="role-skills-table-levels-column" />
+          <col class="role-skills-table-flags-column" />
+        </template>
+
         <template #header>
           <tr>
             <th>Skill</th>
@@ -140,7 +147,20 @@
               <div class="font-medium text-[var(--text-primary)]">{{ skill.title }}</div>
               <div v-if="skill.subtitle" class="mt-1 text-xs text-[var(--text-muted)]">{{ skill.subtitle }}</div>
             </td>
-            <td>{{ skill.skillType || 'N/A' }}</td>
+            <td>
+              <span class="inline-flex items-center gap-1.5">
+                <span>{{ skillTypeLabel(skill) }}</span>
+                <UiTooltip v-if="isGenericSkill(skill)" text="Also known as Critical Core Skills">
+                  <span
+                    class="inline-flex h-4 w-4 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+                    tabindex="0"
+                    aria-label="Generic Skills and Competencies information"
+                  >
+                    <Info class="h-3.5 w-3.5" />
+                  </span>
+                </UiTooltip>
+              </span>
+            </td>
             <td>
               <div class="flex flex-wrap gap-2">
                 <span v-for="level in skill.proficiencyLevels" :key="level" class="level-badge">{{ formatLevelBadge(level) }}</span>
@@ -166,15 +186,18 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { Info } from 'lucide-vue-next';
 
 import UiButton from '../ui/UiButton.vue';
 import UiInput from '../ui/UiInput.vue';
 import UiSelect from '../ui/UiSelect.vue';
+import UiTooltip from '../ui/UiTooltip.vue';
 import UiVirtualTable from '../ui/UiVirtualTable.vue';
-import { formatLevelBadge, formatRoleLabel } from '../../lib/skills-framework/utils';
+import { formatLevelBadge, formatRoleLabel, formatTscCcsTypeLabel, isGenericSkillType } from '../../lib/skills-framework/utils';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
 import { useUiStore } from '../../stores/ui';
+import type { UniqueSkillAnalysis } from '../../lib/skills-framework/types';
 
 const datasetStore = useDatasetStore();
 const explorerStore = useExplorerStore();
@@ -199,10 +222,12 @@ const activeRole = computed(() => {
   return results.value.roles[explorerStore.activeRoleKey] ?? null;
 });
 const analyzedRoleOptions = computed(() =>
-  results.value?.roleKeys.map((roleKey) => ({
-    key: roleKey,
-    label: formatRoleLabel(results.value!.roles[roleKey]),
-  })) ?? [],
+  (
+    results.value?.roleKeys.map((roleKey) => ({
+      key: roleKey,
+      label: formatRoleLabel(results.value!.roles[roleKey]),
+    })) ?? []
+  ).sort((left, right) => left.label.localeCompare(right.label)),
 );
 const clampStyle = {
   display: '-webkit-box',
@@ -241,5 +266,17 @@ function isActiveSkill(skillKey: string, roleKey: string) {
 
 function shouldClamp(value: string | null | undefined) {
   return Boolean(value && value.trim().length > 180);
+}
+
+function primaryTscCcsType(skill: UniqueSkillAnalysis) {
+  return skill.tscs[0]?.type || skill.skillType;
+}
+
+function skillTypeLabel(skill: UniqueSkillAnalysis) {
+  return formatTscCcsTypeLabel(primaryTscCcsType(skill));
+}
+
+function isGenericSkill(skill: UniqueSkillAnalysis) {
+  return isGenericSkillType(primaryTscCcsType(skill));
 }
 </script>

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 
-import { buildAnalysisResultsFromSkillIndex, buildSkillsIndex } from '../lib/skills-framework/analysis';
-import { createNormalizedDataset, deriveWorkbookStatusFromRawData, parseWorkbookFiles } from '../lib/skills-framework/parser';
+import { buildAnalysisResultsFromSkillIndex, buildSkillsIndex, compareSkillEntries } from '../lib/skills-framework/analysis';
+import { createNormalizedDataset, createPreloadedDatasetJson, deriveWorkbookStatusFromRawData, parseWorkbookFiles } from '../lib/skills-framework/parser';
 import { preloadedDatasetRepository } from '../lib/skills-framework/preloadedRepository';
 import type {
   AnalysisResults,
@@ -70,7 +70,7 @@ function skillIndexToMap(skills: SkillIndexRecord[]) {
   return {
     globalSkillsIndex,
     globalSkillKeys: [...skills]
-      .sort((left, right) => left.title.localeCompare(right.title) || left.subtitle.localeCompare(right.subtitle) || left.skillKey.localeCompare(right.skillKey))
+      .sort(compareSkillEntries)
       .map((skill) => skill.skillKey),
   };
 }
@@ -253,6 +253,13 @@ export const useDatasetStore = defineStore('dataset', {
       } finally {
         this.isGlobalSkillsLoading = false;
       }
+    },
+    exportUploadedDatasetJson() {
+      if (this.importMode !== 'upload' || !this.dataset) {
+        return null;
+      }
+
+      return createPreloadedDatasetJson(this.dataset);
     },
   },
 });

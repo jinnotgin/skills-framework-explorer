@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 
-import { buildAnalysis, buildSkillsIndex } from './analysis';
+import { buildAnalysis, buildSkillsIndex, compareSkillEntries } from './analysis';
 import { createNormalizedDataset, loadPreloadedDataset, loadPreloadedDatasetMetadata } from './parser';
 import type {
   DatasetMetaRecord,
@@ -332,16 +332,12 @@ export class PreloadedDatasetRepository {
 
   async getGlobalSkillsIndex(): Promise<SkillIndexRecord[]> {
     if (this.source === 'fallback-memory') {
-      return [...(this.fallbackCache?.skillIndex ?? [])].sort(
-        (left, right) => left.title.localeCompare(right.title) || left.subtitle.localeCompare(right.subtitle) || left.skillKey.localeCompare(right.skillKey),
-      );
+      return [...(this.fallbackCache?.skillIndex ?? [])].sort(compareSkillEntries);
     }
 
     const db = await this.openDatabase();
     const skills = await db.skillIndex.toArray();
-    return skills.sort(
-      (left, right) => left.title.localeCompare(right.title) || left.subtitle.localeCompare(right.subtitle) || left.skillKey.localeCompare(right.skillKey),
-    );
+    return skills.sort(compareSkillEntries);
   }
 
   async getGlobalSkill(skillKey: string): Promise<SkillIndexRecord | null> {

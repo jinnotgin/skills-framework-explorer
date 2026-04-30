@@ -272,6 +272,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { ChevronDown, X } from 'lucide-vue-next';
 import { useRoute } from 'vue-router';
 
+import { compareTscEntries } from '../../lib/skills-framework/analysis';
 import { formatLevelBadge, formatLevelHeading, formatLevelSummary, sortLevels } from '../../lib/skills-framework/utils';
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
@@ -376,7 +377,7 @@ const compareSkillDetail = computed(() => {
       const abilityItems = Array.from(new Set([...(left?.abilityItems ?? []), ...(right?.abilityItems ?? [])]));
       const tscs = [...(left?.tscs ?? []), ...(right?.tscs ?? [])].filter(
         (tsc, index, items) => items.findIndex((candidate) => candidate.code === tsc.code && candidate.proficiency === tsc.proficiency) === index,
-      );
+      ).sort(compareTscEntries);
 
       return {
         level,

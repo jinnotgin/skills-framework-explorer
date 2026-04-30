@@ -38,6 +38,22 @@ export function formatRoleLabel(role: Pick<RoleSummary, 'role' | 'track'>): stri
   return role.track ? `${role.role} · ${role.track}` : role.role;
 }
 
+export function isGenericSkillType(type: string): boolean {
+  return safeStr(type).toLowerCase() === 'ccs';
+}
+
+export function formatTscCcsTypeLabel(type: string): string {
+  const normalized = safeStr(type).toLowerCase();
+  if (normalized === 'tsc' || normalized === 'tts') {
+    return 'Technical';
+  }
+  if (normalized === 'ccs') {
+    return 'Generic';
+  }
+
+  return safeStr(type) || 'N/A';
+}
+
 export function uniqueBy<T>(items: T[], getKey: (item: T) => string): T[] {
   const seen = new Set<string>();
   const output: T[] = [];

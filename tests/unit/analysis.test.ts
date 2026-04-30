@@ -773,4 +773,95 @@ describe('skills framework analysis', () => {
     expect(skill?.subtitle).toContain('2 families');
     expect(skill?.subtitle).toContain('6 TSCs');
   });
+
+  it('sorts CCS-backed skills before TSC-backed skills', () => {
+    const dataset = createNormalizedDataset({
+      jobRoleDescriptions: [
+        {
+          Sector: 'Technology',
+          Track: 'Engineering',
+          'Job Role': 'Engineer',
+          'Job Role Description': 'Builds systems.',
+          'Performance Expectation': 'Ships reliable work.',
+        },
+      ],
+      jobRoleTcsCcs: [
+        {
+          Sector: 'Technology',
+          Track: 'Engineering',
+          'Job Role': 'Engineer',
+          'TSC_CCS Code': 'TSC001',
+          'TSC_CCS Type': 'TSC',
+          'Proficiency Level': '3',
+        },
+        {
+          Sector: 'Technology',
+          Track: 'Engineering',
+          'Job Role': 'Engineer',
+          'TSC_CCS Code': 'CCS001',
+          'TSC_CCS Type': 'CCS',
+          'Proficiency Level': '3',
+        },
+      ],
+      tscKAndA: [
+        {
+          Sector: 'Technology',
+          'TSC_CCS Code': 'TSC001',
+          'TSC_CCS Type': 'TSC',
+          'TSC_CCS Title': 'Alpha Technical Skill',
+          'TSC_CCS Description': 'Technical work.',
+          'TSC_CCS Category': 'Technical',
+          'Proficiency Level': '3',
+          'Proficiency Description': 'Applies technical skill.',
+          'Knowledge / Ability Items': 'Technical knowledge',
+          'Knowledge / Ability Classification': 'Knowledge',
+        },
+        {
+          Sector: 'Technology',
+          'TSC_CCS Code': 'CCS001',
+          'TSC_CCS Type': 'CCS',
+          'TSC_CCS Title': 'Zulu Critical Core Skill',
+          'TSC_CCS Description': 'Core work.',
+          'TSC_CCS Category': 'Core',
+          'Proficiency Level': '3',
+          'Proficiency Description': 'Applies core skill.',
+          'Knowledge / Ability Items': 'Core knowledge',
+          'Knowledge / Ability Classification': 'Knowledge',
+        },
+      ],
+      tscToUnique: [
+        {
+          tsc_code: 'TSC001',
+          proficiency_level: '3',
+          parent_skill_title: 'Alpha Technical Skill',
+          parent_skill_description: 'Technical work.',
+          skill_type: 'Technical',
+        },
+        {
+          tsc_code: 'CCS001',
+          proficiency_level: '3',
+          parent_skill_title: 'Zulu Critical Core Skill',
+          parent_skill_description: 'Core work.',
+          skill_type: 'Critical Core',
+        },
+      ],
+      uniqueSkillsList: [
+        {
+          parent_skill_title: 'Alpha Technical Skill',
+          parent_skill_description: 'Technical work.',
+        },
+        {
+          parent_skill_title: 'Zulu Critical Core Skill',
+          parent_skill_description: 'Core work.',
+        },
+      ],
+      jobRoleCwfKt: [],
+    });
+
+    const results = buildAnalysis(dataset, ['Technology|||Engineering|||Engineer']);
+    const role = results?.roles['Technology|||Engineering|||Engineer'];
+
+    expect(role?.uniqueSkills.map((skill) => skill.title)).toEqual(['Zulu Critical Core Skill', 'Alpha Technical Skill']);
+    expect(role?.tscs.map((tsc) => tsc.code)).toEqual(['CCS001', 'TSC001']);
+  });
 });

@@ -129,13 +129,53 @@ function makeCacheKey(roleKeys: RoleKey[]): string {
   return roleKeys.join('\u001f');
 }
 
-function compareSkillEntries<T extends { title: string; subtitle: string; skillKey: string }>(left: T, right: T): number {
-  return left.title.localeCompare(right.title) || left.subtitle.localeCompare(right.subtitle) || left.skillKey.localeCompare(right.skillKey);
+function getTscTypePriority(type: string): number {
+  const normalized = safeStr(type).toLowerCase();
+  if (normalized === 'ccs') {
+    return 0;
+  }
+  if (normalized === 'tsc' || normalized === 'tts') {
+    return 1;
+  }
+  return 2;
+}
+
+export function compareTscEntries(left: SkillTsc, right: SkillTsc): number {
+  const leftLevel = getLevelSortValue(left.proficiency) ?? Number.MAX_SAFE_INTEGER;
+  const rightLevel = getLevelSortValue(right.proficiency) ?? Number.MAX_SAFE_INTEGER;
+
+  return (
+    getTscTypePriority(left.type) - getTscTypePriority(right.type) ||
+    left.title.localeCompare(right.title) ||
+    left.code.localeCompare(right.code) ||
+    leftLevel - rightLevel ||
+    left.proficiency.localeCompare(right.proficiency)
+  );
+}
+
+function getSkillTscTypePriority(skill: { tscs?: SkillTsc[] }): number {
+  if (!skill.tscs?.length) {
+    return 2;
+  }
+
+  return Math.min(...skill.tscs.map((tsc) => getTscTypePriority(tsc.type)));
+}
+
+export function compareSkillEntries<T extends { title: string; subtitle: string; skillKey: string; tscs?: SkillTsc[] }>(left: T, right: T): number {
+  return (
+    getSkillTscTypePriority(left) - getSkillTscTypePriority(right) ||
+    left.title.localeCompare(right.title) ||
+    left.subtitle.localeCompare(right.subtitle) ||
+    left.skillKey.localeCompare(right.skillKey)
+  );
 }
 
 function buildSkillSubtitle(tscs: SkillTsc[], combinedFamilies: string[]): string {
   const sectors = Array.from(new Set(tscs.map((tsc) => tsc.sector).filter(Boolean))).sort((left, right) => left.localeCompare(right));
-  const codes = Array.from(new Set(tscs.map((tsc) => tsc.code).filter(Boolean))).sort((left, right) => left.localeCompare(right));
+  const codes = [...tscs]
+    .sort(compareTscEntries)
+    .map((tsc) => tsc.code)
+    .filter((code, index, items) => code && items.indexOf(code) === index);
 
   const sectorLabel =
     sectors.length === 0 ? '' : sectors.length <= 2 ? sectors.join(', ') : `${sectors.slice(0, 2).join(', ')} +${sectors.length - 2} more`;
@@ -406,22 +446,34 @@ function sortRoles(roles: SkillRoleReference[]): SkillRoleReference[] {
 
 function finalizeLocalSkill(skill: UniqueSkillAnalysis): UniqueSkillAnalysis {
   const combinedFamilies = [...skill.combinedFamilies].sort((left, right) => left.localeCompare(right));
+  const proficiencies = Object.fromEntries(
+    Object.entries(skill.proficiencies).map(([level, detail]) => [level, { ...detail, tscs: [...detail.tscs].sort(compareTscEntries) }]),
+  );
+
   return {
     ...skill,
     combinedFamilies,
     subtitle: buildSkillSubtitle(skill.tscs, combinedFamilies),
+    proficiencies,
     proficiencyLevels: sortLevels(Object.keys(skill.proficiencies)),
+    tscs: [...skill.tscs].sort(compareTscEntries),
   };
 }
 
 function finalizeGlobalSkill(skill: GlobalSkillAnalysis): GlobalSkillAnalysis {
   const combinedFamilies = [...skill.combinedFamilies].sort((left, right) => left.localeCompare(right));
+  const proficiencies = Object.fromEntries(
+    Object.entries(skill.proficiencies).map(([level, detail]) => [level, { ...detail, tscs: [...detail.tscs].sort(compareTscEntries) }]),
+  );
+
   return {
     ...skill,
     combinedFamilies,
     subtitle: buildSkillSubtitle(skill.tscs, combinedFamilies),
+    proficiencies,
     roles: sortRoles(skill.roles),
     proficiencyLevels: sortLevels(Object.keys(skill.proficiencies)),
+    tscs: [...skill.tscs].sort(compareTscEntries),
   };
 }
 
@@ -561,7 +613,7 @@ export function buildAnalysis(dataset: NormalizedDataset | null, roleKeys: RoleK
       performance: roleMeta.performance,
       cwf: dataset.roleCwfByKey[roleKey] ?? [],
       uniqueSkills,
-      tscs: tscList,
+      tscs: [...tscList].sort(compareTscEntries),
     };
   }
 
@@ -642,6 +694,7 @@ export function buildAnalysisFromRoleAnalyses(roleAnalyses: RoleAnalysisRecord[]
   let totalTscs = 0;
 
   for (const roleAnalysis of roleAnalyses) {
+    const uniqueSkills = [...roleAnalysis.uniqueSkills].map(finalizeLocalSkill).sort(compareSkillEntries);
     roles[roleAnalysis.roleKey] = {
       role: roleAnalysis.role,
       sector: roleAnalysis.sector,
@@ -649,12 +702,12 @@ export function buildAnalysisFromRoleAnalyses(roleAnalyses: RoleAnalysisRecord[]
       description: roleAnalysis.description,
       performance: roleAnalysis.performance,
       cwf: roleAnalysis.cwf,
-      uniqueSkills: roleAnalysis.uniqueSkills,
-      tscs: roleAnalysis.tscs,
+      uniqueSkills,
+      tscs: [...roleAnalysis.tscs].sort(compareTscEntries),
     };
     totalTscs += roleAnalysis.tscs.length;
 
-    for (const skill of roleAnalysis.uniqueSkills) {
+    for (const skill of uniqueSkills) {
       if (!globalSkills[skill.skillKey]) {
         globalSkills[skill.skillKey] = {
           skillKey: skill.skillKey,
