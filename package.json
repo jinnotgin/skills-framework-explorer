@@ -1,7 +1,7 @@
 {
   "name": "skills-framework-explorer",
   "version": "1.0.0",
-  "appVersion": "12",
+  "appVersion": "13",
   "private": true,
   "type": "module",
   "scripts": {
