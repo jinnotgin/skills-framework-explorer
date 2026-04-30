@@ -76,7 +76,7 @@
                 </div>
 
                 <div v-if="currentRoleSkillLevel.tscs.length" class="detail-list-block">
-                  <div class="detail-list-heading">Related TSCs</div>
+                  <div class="detail-list-heading">Related Skills</div>
                   <div class="grid gap-2">
                     <div
                       v-for="tsc in currentRoleSkillLevel.tscs"
@@ -155,7 +155,7 @@
                 </div>
 
                 <div v-if="currentCompareLevel.tscs.length" class="detail-list-block">
-                  <div class="detail-list-heading">Related TSCs</div>
+                  <div class="detail-list-heading">Related Skills</div>
                   <div class="grid gap-2">
                     <div
                       v-for="tsc in currentCompareLevel.tscs"
@@ -226,7 +226,7 @@
                 </div>
 
                 <div v-if="currentSkillCentricLevel.tscs.length" class="detail-list-block">
-                  <div class="detail-list-heading">Related TSCs</div>
+                  <div class="detail-list-heading">Related Skills</div>
                   <div class="grid gap-2">
                     <div
                       v-for="tsc in currentSkillCentricLevel.tscs"
