@@ -32,6 +32,11 @@ export interface WorkbookStatus {
   filename: string;
 }
 
+export interface WorkbookProcessingProgress {
+  message: string;
+  percent: number | null;
+}
+
 export interface RoleSummary {
   key: RoleKey;
   role: string;

@@ -40,14 +40,23 @@
         </div>
 
         <label
-          class="block cursor-pointer rounded-[8px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] px-4 py-6 text-center transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
+          class="block rounded-[8px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] px-4 py-6 text-center transition-colors"
+          :class="datasetStore.isLoading ? 'cursor-wait opacity-80' : 'cursor-pointer hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]'"
           @dragover.prevent
           @drop.prevent="handleDrop"
         >
-          <Upload class="mx-auto mb-2 h-5 w-5 text-[var(--primary)]" />
-          <div class="text-sm font-medium text-[var(--text-primary)]">Drop XLSX files or click to browse</div>
-          <div class="mt-1 text-xs text-[var(--text-muted)]">Upload all 3 SkillsFuture workbooks</div>
-          <input ref="fileInput" class="hidden" type="file" accept=".xlsx" multiple @change="handleFileInput" />
+          <LoaderCircle v-if="datasetStore.isLoading" class="mx-auto mb-2 h-5 w-5 animate-spin text-[var(--primary)]" />
+          <Upload v-else class="mx-auto mb-2 h-5 w-5 text-[var(--primary)]" />
+          <div class="text-sm font-medium text-[var(--text-primary)]">
+            {{ datasetStore.isLoading ? 'Processing uploaded workbooks' : 'Drop XLSX files or click to browse' }}
+          </div>
+          <div class="mt-1 text-xs text-[var(--text-muted)]">
+            {{ datasetStore.isLoading ? uploadProgressMessage : 'Upload all 3 SkillsFuture workbooks' }}
+          </div>
+          <div v-if="datasetStore.isLoading && datasetStore.uploadProgress.percent !== null" class="mx-auto mt-3 h-2 w-full max-w-sm overflow-hidden rounded-full bg-[var(--border-default)]">
+            <div class="h-full rounded-full bg-[var(--primary)] transition-[width]" :style="{ width: `${datasetStore.uploadProgress.percent}%` }"></div>
+          </div>
+          <input ref="fileInput" class="hidden" type="file" accept=".xlsx" multiple :disabled="datasetStore.isLoading" @change="handleFileInput" />
         </label>
 
         <div class="grid gap-2 md:grid-cols-3">
@@ -57,6 +66,7 @@
             class="rounded-[8px] border border-[var(--border-default)] bg-[var(--surface-default)] px-3 py-3 text-sm"
           >
             <div class="text-[var(--text-secondary)]">{{ status.label }}</div>
+            <div v-if="status.filename" class="mt-1 truncate text-xs text-[var(--text-muted)]" :title="status.filename">{{ status.filename }}</div>
             <div class="mt-2">
               <span class="badge" :class="status.loaded ? 'badge-success' : 'badge-primary'">
                 {{ status.loaded ? 'Loaded' : 'Missing' }}
@@ -75,7 +85,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Download, Upload, X } from 'lucide-vue-next';
+import { Download, LoaderCircle, Upload, X } from 'lucide-vue-next';
 
 import { useDatasetStore } from '../../stores/dataset';
 import { useExplorerStore } from '../../stores/explorer';
@@ -100,21 +110,24 @@ const datasetModeLabel = computed(() => {
 });
 
 const fileStatuses = computed(() => [
-  { label: 'Skills framework dataset', loaded: datasetStore.workbookStatus.framework.loaded },
-  { label: 'TSC to unique skills mapping', loaded: datasetStore.workbookStatus.tscMap.loaded },
-  { label: 'Unique skills list', loaded: datasetStore.workbookStatus.unique.loaded },
+  { label: 'Skills framework dataset', loaded: datasetStore.workbookStatus.framework.loaded, filename: datasetStore.workbookStatus.framework.filename },
+  { label: 'TSC to unique skills mapping', loaded: datasetStore.workbookStatus.tscMap.loaded, filename: datasetStore.workbookStatus.tscMap.filename },
+  { label: 'Unique skills list', loaded: datasetStore.workbookStatus.unique.loaded, filename: datasetStore.workbookStatus.unique.filename },
 ]);
 
 const canExportUploadedJson = computed(() => datasetStore.importMode === 'upload' && Boolean(datasetStore.dataset));
+const uploadProgressMessage = computed(() => datasetStore.uploadProgress.message || 'Processing uploaded workbooks.');
 
 async function processFiles(files: File[]) {
-  if (!files.length) {
+  if (!files.length || datasetStore.isLoading) {
     return;
   }
 
-  await datasetStore.loadFromFiles(files);
-  explorerStore.resetForDatasetChange();
-  uiStore.setDataModalOpen(false);
+  const dataset = await datasetStore.loadFromFiles(files);
+  if (dataset) {
+    explorerStore.resetForDatasetChange();
+    uiStore.setDataModalOpen(false);
+  }
 }
 
 async function handleDrop(event: DragEvent) {

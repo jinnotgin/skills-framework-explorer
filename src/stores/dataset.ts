@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
 
 import { buildAnalysisResultsFromSkillIndex, buildSkillsIndex, compareSkillEntries } from '../lib/skills-framework/analysis';
-import { createNormalizedDataset, createPreloadedDatasetJson, deriveWorkbookStatusFromRawData, parseWorkbookFiles } from '../lib/skills-framework/parser';
+import { createPreloadedDatasetJson } from '../lib/skills-framework/parser';
 import { preloadedDatasetRepository } from '../lib/skills-framework/preloadedRepository';
+import { parseWorkbookFilesInWorker } from '../lib/skills-framework/workbookUploadWorkerClient';
 import type {
   AnalysisResults,
   DatasetSyncState,
@@ -14,6 +15,7 @@ import type {
   RoleSummary,
   SkillIndexRecord,
   WorkbookKind,
+  WorkbookProcessingProgress,
   WorkbookStatus,
 } from '../lib/skills-framework/types';
 
@@ -26,6 +28,7 @@ interface DatasetState {
   dataSource: PreloadedDataSource | null;
   generatedAt: string;
   workbookStatus: Record<WorkbookKind, WorkbookStatus>;
+  uploadProgress: WorkbookProcessingProgress;
   error: string;
   rolesCatalog: RoleSummary[];
   roleByKey: Record<RoleKey, RoleSummary>;
@@ -89,6 +92,7 @@ export const useDatasetStore = defineStore('dataset', {
     dataSource: null,
     generatedAt: '',
     workbookStatus: emptyWorkbookStatus(),
+    uploadProgress: { message: '', percent: null },
     error: '',
     rolesCatalog: [],
     roleByKey: {},
@@ -206,17 +210,20 @@ export const useDatasetStore = defineStore('dataset', {
     async loadFromFiles(files: File[]) {
       this.isLoading = true;
       this.error = '';
+      this.uploadProgress = { message: 'Starting workbook processing.', percent: 0 };
 
       try {
-        const rawData = await parseWorkbookFiles(files);
-        const dataset = createNormalizedDataset(rawData);
-        this.setDataset(dataset, 'upload', deriveWorkbookStatusFromRawData(rawData));
+        const { dataset, workbookStatus } = await parseWorkbookFilesInWorker(files, (progress) => {
+          this.uploadProgress = progress;
+        });
+        this.setDataset(dataset, 'upload', workbookStatus);
         return dataset;
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to parse uploaded workbooks';
         return null;
       } finally {
         this.isLoading = false;
+        this.uploadProgress = { message: '', percent: null };
       }
     },
     async ensureGlobalSkillsLoaded(force = false) {
